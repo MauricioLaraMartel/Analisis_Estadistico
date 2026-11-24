@@ -2,536 +2,93 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Urgencia · Gráficos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ambulatorio no Médica | Unidad de Estadística</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+
   <style>
-    body { margin:0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; background:#f4f6f9; color:#1f2937; }
-    header { background:#0f6cbd; color:#fff; padding:20px 32px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
-    header h1 { margin:0; font-size:1.5rem; }
-    main { max-width:1400px; margin:0 auto; padding:24px; }
-
-    /* ---- Botón volver al inicio ---- */
-    .btn-inicio { background:#fff; color:#0f6cbd; text-decoration:none; font-weight:600; font-size:.95rem;
-                  padding:10px 18px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.15); }
-    .btn-inicio:hover { background:#e7f1fb; }
-
-    /* ---- Barra de filtros ---- */
-    .filtros { display:flex; gap:24px; align-items:flex-end; flex-wrap:wrap;
-               background:#fff; padding:16px 20px; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:24px; }
-    .filtros label { display:flex; flex-direction:column; font-size:.85rem; color:#6b7280; gap:4px; }
-    .filtros select { font:inherit; font-size:1rem; padding:8px 12px; border-radius:8px; border:1px solid #d1d5db; min-width:180px; }
-    #estado { color:#6b7280; font-size:.9rem; margin-left:auto; }
-
-    /* ---- Botones de carga / descarga de datos ---- */
-    .acciones { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .btn { font:inherit; font-size:.9rem; font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;
-           border:1px solid #0f6cbd; background:#0f6cbd; color:#fff; }
-    .btn.sec { background:#fff; color:#0f6cbd; }
-    .btn:hover { filter:brightness(1.08); }
-    .oculto { display:none !important; }
-
-    /* ---- Tarjetas de gráficos ---- */
-    .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:24px; }
-    .card h2 { font-size:1.1rem; margin:0 0 4px; }
-    .card .sub { color:#6b7280; font-size:.85rem; margin:0 0 16px; }
-    table { width:100%; border-collapse:collapse; margin-top:16px; font-size:.9rem; }
-    th, td { padding:8px 10px; border-bottom:1px solid #e5e7eb; text-align:right; }
-    th:first-child, td:first-child { text-align:left; }
-    th { color:#6b7280; font-weight:600; }
-    tr.total td { font-weight:700; border-top:2px solid #d1d5db; }
-
-    /* ---- Indicador de cumplimiento ---- */
-    .cumplimiento { display:flex; align-items:baseline; gap:10px; margin:0 0 16px; }
-    .cumplimiento strong { font-size:2.2rem; color:#2f9e44; }
-    .cumplimiento span { color:#6b7280; font-size:.9rem; }
-
-    /* ---- Gráficos 2 y 3 lado a lado ---- */
-    .fila-2 { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:24px; margin-bottom:24px; }
-    .fila-2 .card { margin-bottom:0; display:flex; flex-direction:column; }
-    .fila-2 h2 { min-height:2.6em; }
-    .fila-2 .cumplimiento span { font-size:.85rem; }
-    .fila-2 table { font-size:.82rem; }
-    .fila-2 th, .fila-2 td { padding:6px 8px; }
-    .tabla-scroll { overflow-x:auto; }
-    .tabla-larga { max-height:300px; overflow-y:auto; }
-    .tabla-larga th { position:sticky; top:0; background:#fff; }
-    canvas { max-width:100%; }
-
-    @media (max-width: 1000px) {
-      .fila-2 { grid-template-columns:1fr; }
-      .fila-2 h2 { min-height:0; }
+    .construccion {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 70vh;
+      text-align: center;
+      padding: 40px 20px;
+      background-color: #f4f6f9;
     }
-    @media (max-width: 600px) {
-      main { padding:12px; }
-      header { padding:16px; }
-      header h1 { font-size:1.2rem; }
-      .filtros select { min-width:140px; }
+
+    .construccion-caja {
+      background-color: #ffffff;
+      max-width: 600px;
+      width: 100%;
+      padding: 50px 40px;
+      border-radius: 10px;
+      border-top: 6px solid #0f69b4;
+      box-shadow: 0 4px 14px rgba(10, 19, 45, 0.08);
+    }
+
+    .construccion-icono {
+      font-size: 4rem;
+      margin-bottom: 15px;
+    }
+
+    .construccion h1 {
+      color: #0a132d;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .construccion h2 {
+      color: #0f69b4;
+      font-size: 1.3rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+      padding-bottom: 0;
+    }
+
+    .construccion h2::after {
+      display: none;
+    }
+
+    .construccion p {
+      color: #5f6b7a;
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+    }
+
+    .boton-volver {
+      display: inline-block;
+      padding: 12px 28px;
+      background-color: #0f69b4;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: background-color 0.2s;
+    }
+
+    .boton-volver:hover {
+      background-color: #0a4f8a;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Servicio de Urgencia · Produccion</h1>
-    <a id="produccion" class="btn-inicio" href="index.html">⟵ Volver al inicio</a>
-  </header>
 
-  <main>
-    <!-- ============ FILTROS (se aplican a todos los gráficos) ============ -->
-    <section class="filtros">
-      <label>Año
-        <select id="filtroAnio"></select>
-      </label>
-      <label>Mes
-        <select id="filtroMes">
-          <option value="0">Total</option>
-          <option value="1">Enero</option>
-          <option value="2">Febrero</option>
-          <option value="3">Marzo</option>
-          <option value="4">Abril</option>
-          <option value="5">Mayo</option>
-          <option value="6">Junio</option>
-          <option value="7">Julio</option>
-          <option value="8">Agosto</option>
-          <option value="9">Septiembre</option>
-          <option value="10">Octubre</option>
-          <option value="11">Noviembre</option>
-          <option value="12">Diciembre</option>
-        </select>
-      </label>
+  <div class="barra-gobierno">
+    <span class="azul"></span>
+    <span class="rojo"></span>
+  </div>
 
-      <div class="acciones">
-        <!-- Aparece solo si no se encontró ni el resumen ni el Excel -->
-        <label class="btn oculto" id="btnCargar" style="flex-direction:row;color:#fff">
-          Cargar Excel de urgencia…
-          <input type="file" id="archivoLocal" accept=".xlsx,.xlsm,.xls" hidden>
-        </label>
-        <!-- Aparece cuando hay Excel leído: genera el JSON liviano para subir a GitHub -->
-        <button class="btn sec oculto" id="btnResumen" type="button">Descargar resumen (para GitHub)</button>
-      </div>
+  <section class="construccion">
+    <div class="construccion-caja">
+      <div class="construccion-icono">🚧</div>
+      <h1>Ambulatorio no Médica</h1>
+      <h2>Página en construcción</h2>
+      <p>Estamos trabajando en esta sección. Pronto estará disponible la información.</p>
+      <a href="index.html" class="boton-volver">← Volver al inicio</a>
+    </div>
+  </section>
 
-      <span id="estado">Cargando datos…</span>
-    </section>
-
-    <!-- ============ GRÁFICO 1 ============ -->
-    <article class="card">
-      <h2>Demanda, atendidos y retiro sin alta por tipo de atención</h2>
-      <p class="sub" id="sub1"></p>
-      <canvas id="g1"></canvas>
-      <div class="tabla-scroll"><table id="tabla1"></table></div>
-    </article>
-
-    <section class="fila-2">
-
-    <!-- ============ GRÁFICO 2 ============ -->
-    <article class="card">
-      <h2>Categorización C2 · Atención médica niño y adulto · Tiempo de atención</h2>
-      <p class="sub" id="sub2"></p>
-      <div class="cumplimiento">
-        <strong id="cumple2">–</strong>
-        <span>de cumplimiento (C2 atendidos en 30 minutos o menos ÷ total C2 atendidos)</span>
-      </div>
-      <canvas id="g2"></canvas>
-      <div class="tabla-scroll"><table id="tabla2"></table></div>
-    </article>
-
-    <!-- ============ GRÁFICO 3 (REM A08 · Sección D) ============ -->
-    <article class="card">
-      <h2>Pacientes que ingresan a cama hospitalaria según tiempo de demora al ingreso</h2>
-      <p class="sub" id="sub3"></p>
-      <div class="cumplimiento">
-        <strong id="cumple3">–</strong>
-        <span>ingresan en menos de 12 horas (Menos de 12 h ÷ total ingresos y permanencias, ambos sexos)</span>
-      </div>
-      <canvas id="g3"></canvas>
-      <div class="tabla-scroll tabla-larga"><table id="tabla3"></table></div>
-      <p class="sub" id="aviso3" style="margin-top:12px"></p>
-    </article>
-
-    </section>
-  </main>
-
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script>
-  // ======================= CONFIGURACIÓN =======================
-  // 1º se busca el RESUMEN (liviano, sin datos de pacientes: este es el que se sube a GitHub)
-  // 2º si no está, se busca el EXCEL completo (sirve en tu computador con Live Server)
-  // 3º si tampoco está, aparece el botón "Cargar Excel" para elegirlo desde el computador
-  // CORREGIDO: tu archivo se llama "l.urgencia.json"; antes el código buscaba "resumen_urgencia.json" (→ 404).
-  // Se prueban ambos nombres, así funciona con cualquiera de los dos.
-  const RESUMENES = ['bdurgencia/l.urgencia.json', 'bdurgencia/resumen_urgencia.json'];
-  const ARCHIVO = 'bdurgencia/l.urgencia.xlsx';
-
-  const CARPETA_REM = 'REM';
-  const EXTENSIONES_REM = ['.xlsx', '.xlsm', '.xls'];
-
-  const NOMBRE_MES = ['', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
-                      'Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const TIPOS = ['ATENCION MEDICA GINECO-OBSTETRA', 'ATENCION POR MATRONA', 'ATENCION MEDICA NIÑO Y ADULTO'];
-  const fmt = n => n.toLocaleString('es-CL');
-  const pct = (parte, total) => total ? (100 * parte / total).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%' : '–';
-  const esUno = v => String(v ?? '').trim() === '1';
-
-  // Cada elemento de "datos" es un GRUPO: { anio, mes, tipo, estado, categoria, hasta30, mas30, n }
-  // donde n = cantidad de atenciones con esas características.
-  let datos = [];
-  let graficos = {};
-  let iniciado = false;
-  const contar = arr => arr.reduce((s, x) => s + x.n, 0);
-
-  function anioMes(fila) {
-    const f = fila['Fecha Admisión'];
-    if (typeof f === 'string' && f.includes('/')) {
-      const p = f.split('/');
-      return [Number(p[2]), Number(p[1])];
-    }
-    if (f instanceof Date) return [f.getFullYear(), f.getMonth() + 1];
-    return [null, Number(fila['MES'])];
-  }
-
-  // ======================= 1. CARGAR LOS DATOS =======================
-
-  // Lee el Excel y lo agrupa (cuenta cuántas atenciones hay de cada combinación)
-  function resumirExcel(buf) {
-    const libro = XLSX.read(buf, { type: 'array', dense: true });
-    const filas = XLSX.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]], { raw: false });
-    const grupos = new Map();
-    for (const f of filas) {
-      const [anio, mes] = anioMes(f);
-      const g = {
-        anio, mes,
-        tipo:      String(f['Clasificación'] || '').trim(),
-        estado:    String(f['ESTADO CITA']   || '').trim(),
-        categoria: String(f['Primera Categorización'] || '').trim(),
-        hasta30:   esUno(f['MENOR IGUAL 30 MIN']) ? 1 : 0,
-        mas30:     esUno(f['MAYOR 30 MIN']) ? 1 : 0
-      };
-      const clave = [g.anio, g.mes, g.tipo, g.estado, g.categoria, g.hasta30, g.mas30].join('|');
-      if (grupos.has(clave)) grupos.get(clave).n++;
-      else grupos.set(clave, { ...g, n: 1 });
-    }
-    return [...grupos.values()];
-  }
-
-  async function cargarDatos() {
-    // 1º Resumen JSON (CORREGIDO: prueba cada nombre posible)
-    for (const ruta of RESUMENES) {
-      try {
-        const r = await fetch(ruta);
-        if (r.ok) { iniciar(await r.json(), 'resumen'); return; }
-      } catch (e) {}
-    }
-
-    // 2º Excel completo
-    try {
-      estado.textContent = 'Leyendo Excel… (puede tardar unos segundos)';
-      const r = await fetch(ARCHIVO);
-      if (r.ok) { iniciar(resumirExcel(await r.arrayBuffer()), 'excel'); return; }
-    } catch (e) {}
-
-    // 3º Nada encontrado: pedir el archivo al usuario
-    estado.textContent = 'No se encontraron los datos de urgencia. Carga el Excel desde tu computador.';
-    btnCargar.classList.remove('oculto');
-    iniciarFiltros();   // igual se puede ver el gráfico 3 (REM)
-  }
-
-  // Excel elegido desde el computador: se lee en el navegador, no se sube a ningún lado
-  archivoLocal.addEventListener('change', async () => {
-    const archivo = archivoLocal.files[0];
-    if (!archivo) return;
-    estado.textContent = 'Leyendo ' + archivo.name + '…';
-    try {
-      iniciar(resumirExcel(await archivo.arrayBuffer()), 'excel');
-      btnCargar.classList.add('oculto');
-    } catch (e) {
-      estado.textContent = 'Error al leer el archivo: ' + e;
-    }
-  });
-
-  // Descarga el resumen JSON (este es el archivo que se sube a GitHub)
-  btnResumen.addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(datos)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'resumen_urgencia.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-
-  function iniciar(nuevosDatos, origen) {
-    datos = nuevosDatos;
-    estado.textContent = fmt(contar(datos)) + ' atenciones leídas' + (origen === 'resumen' ? ' (resumen)' : ' (Excel)');
-    btnResumen.classList.toggle('oculto', origen !== 'excel');
-    iniciarFiltros();
-  }
-
-  function iniciarFiltros() {
-    // Años de los datos; si no hay, se usan el año actual y los 4 anteriores (para el REM)
-    let anios = [...new Set(datos.map(d => d.anio).filter(Boolean))].sort((a, b) => b - a);
-    if (!anios.length) { const hoy = new Date().getFullYear(); anios = [0,1,2,3,4].map(i => hoy - i); }
-    const anterior = filtroAnio.value;
-    filtroAnio.innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join('');
-    if (anios.includes(Number(anterior))) filtroAnio.value = anterior;
-
-    if (!iniciado) {
-      filtroAnio.addEventListener('change', actualizarTodo);
-      filtroMes.addEventListener('change', actualizarTodo);
-      iniciado = true;
-    }
-    actualizarTodo();
-  }
-
-  cargarDatos();
-
-  // ======================= 2. FILTRAR =======================
-  function datosFiltrados() {
-    const anio = Number(filtroAnio.value);
-    const mes  = Number(filtroMes.value);
-    return datos.filter(d => d.anio === anio && (mes === 0 || d.mes === mes));
-  }
-
-  function textoPeriodo() {
-    const mes = Number(filtroMes.value);
-    return (mes === 0 ? 'Total año ' : NOMBRE_MES[mes] + ' ') + filtroAnio.value;
-  }
-
-  function actualizarTodo() {
-    const d = datosFiltrados();
-    grafico1(d);
-    grafico2(d);
-    grafico3();
-  }
-
-  // ======================= 3. GRÁFICOS =======================
-  function dibujar(id, config) {
-    if (graficos[id]) graficos[id].destroy();
-    graficos[id] = new Chart(document.getElementById(id), config);
-  }
-
-  // ---- GRÁFICO 1 ----
-  function grafico1(d) {
-    const demanda = [], atendidos = [], retiros = [];
-    TIPOS.forEach(t => {
-      const filas = d.filter(x => x.tipo === t);
-      demanda.push(contar(filas));
-      atendidos.push(contar(filas.filter(x => x.estado === 'ATENDIDO')));
-      retiros.push(contar(filas.filter(x => x.estado === 'RETIRO SIN ALTA')));
-    });
-
-    sub1.textContent = textoPeriodo();
-
-    dibujar('g1', {
-      type: 'bar',
-      data: {
-        labels: ['Médica gineco-obstetra', 'Por matrona', 'Médica niño y adulto'],
-        datasets: [
-          { label: 'Demanda',         data: demanda,   backgroundColor: '#0f6cbd' },
-          { label: 'Atendidos',       data: atendidos, backgroundColor: '#2f9e44' },
-          { label: 'Retiro sin alta', data: retiros,   backgroundColor: '#e8590c' }
-        ]
-      },
-      options: {
-        responsive: true,
-        aspectRatio: 3,
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: c => {
-                let texto = c.dataset.label + ': ' + fmt(c.raw);
-                if (c.datasetIndex > 0) texto += ' (' + pct(c.raw, demanda[c.dataIndex]) + ')';
-                return texto;
-              }
-            }
-          }
-        },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-
-    const suma = a => a.reduce((s, n) => s + n, 0);
-    const nombres = ['Atención médica gineco-obstetra', 'Atención por matrona', 'Atención médica niño y adulto'];
-    tabla1.innerHTML =
-      '<tr><th>Tipo de atención</th><th>Demanda</th><th>Atendidos</th><th>Retiro sin alta</th><th>% atendidos</th><th>% retiro</th></tr>' +
-      nombres.map((n, i) =>
-        `<tr><td>${n}</td><td>${fmt(demanda[i])}</td><td>${fmt(atendidos[i])}</td><td>${fmt(retiros[i])}</td>` +
-        `<td>${pct(atendidos[i], demanda[i])}</td><td>${pct(retiros[i], demanda[i])}</td></tr>`
-      ).join('') +
-      `<tr class="total"><td>Total</td><td>${fmt(suma(demanda))}</td><td>${fmt(suma(atendidos))}</td><td>${fmt(suma(retiros))}</td>` +
-      `<td>${pct(suma(atendidos), suma(demanda))}</td><td>${pct(suma(retiros), suma(demanda))}</td></tr>`;
-  }
-
-  // ---- GRÁFICO 2 ----
-  function grafico2(d) {
-    const c2 = d.filter(x => x.tipo === 'ATENCION MEDICA NIÑO Y ADULTO'
-                          && x.categoria === 'C2'
-                          && x.estado === 'ATENDIDO');
-    const total   = contar(c2);
-    const mas30   = contar(c2.filter(x => x.mas30));
-    const hasta30 = contar(c2.filter(x => x.hasta30));
-    const cumplimiento = pct(hasta30, total);
-
-    sub2.textContent = textoPeriodo();
-    cumple2.textContent = cumplimiento;
-
-    dibujar('g2', {
-      type: 'bar',
-      data: {
-        labels: [['C2 atendidos', 'total'], ['C2 atendidos', 'más de 30 min'], ['C2 atendidos', '30 min o menos']],
-        datasets: [{
-          label: 'Pacientes C2',
-          data: [total, mas30, hasta30],
-          backgroundColor: ['#0f6cbd', '#e8590c', '#2f9e44']
-        }]
-      },
-      options: {
-        responsive: true,
-        aspectRatio: 1.8,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: c => fmt(c.raw) + (c.dataIndex > 0 ? ' (' + pct(c.raw, total) + ')' : '')
-            }
-          }
-        },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-
-    tabla2.innerHTML =
-      '<tr><th>Atención médica niño y adulto</th><th>C2 atendidos total</th><th>C2 más de 30 min</th><th>C2 30 min o menos</th><th>% cumplimiento</th></tr>' +
-      `<tr class="total"><td>${textoPeriodo()}</td><td>${fmt(total)}</td><td>${fmt(mas30)}</td><td>${fmt(hasta30)}</td><td>${cumplimiento}</td></tr>`;
-  }
-
-  // ======================= 4. REM A08 · SECCIÓN D =======================
-  const remCache = {};
-
-  const norm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                                    .toUpperCase().replace(/\s+/g, ' ').trim();
-
-  async function leerLibroREM(anio, mes) {
-    const nombre = 'SA_' + String(mes).padStart(2, '0');
-    for (const ext of EXTENSIONES_REM) {
-      const ruta = `${CARPETA_REM}/${anio}/REM_A/${nombre}${ext}`;
-      const r = await fetch(ruta);
-      if (r.ok) return XLSX.read(await r.arrayBuffer(), { type: 'array' });
-    }
-    return null;
-  }
-
-  function extraerSeccionD(libro) {
-    const nombreHoja = libro.SheetNames.find(n => norm(n) === 'A08') || libro.SheetNames.find(n => norm(n).includes('A08'));
-    if (!nombreHoja) throw 'no tiene hoja A08';
-    const filas = XLSX.utils.sheet_to_json(libro.Sheets[nombreHoja], { header: 1, raw: true, defval: '' });
-    const textoFila = f => norm(f.join(' '));
-
-    const iniD = filas.findIndex(f => /SECCION D\b/.test(textoFila(f)));
-    if (iniD < 0) throw 'no se encontró la SECCIÓN D en A08';
-    let finD = filas.findIndex((f, i) => i > iniD && /SECCION [E-Z]\b/.test(textoFila(f)));
-    if (finD < 0) finD = filas.length;
-
-    const buscar = prueba => {
-      for (let i = iniD; i < finD; i++) {
-        const col = filas[i].findIndex(c => prueba(norm(c)));
-        if (col >= 0) return { fila: i, col };
-      }
-      return null;
-    };
-    const tramos = {
-      menos12:    buscar(t => t.startsWith('MENOS DE 12')),
-      de12a24:    buscar(t => t.replace(/ /g, '').startsWith('12-24')),
-      mayor24:    buscar(t => t.startsWith('MAYOR A 24') || t.startsWith('MAS DE 24')),
-      permanecen: buscar(t => t.includes('PERMANECEN EN UEH'))
-    };
-    for (const k in tramos) if (!tramos[k]) throw 'no se encontró la fila "' + k + '" en la Sección D';
-
-    let colAmbos = -1;
-    for (let i = iniD; i < tramos.menos12.fila && colAmbos < 0; i++) {
-      colAmbos = filas[i].findIndex(c => norm(c).includes('AMBOS SEXOS'));
-    }
-
-    const valor = t => {
-      const fila = filas[t.fila];
-      if (colAmbos >= 0) return Number(fila[colAmbos]) || 0;
-      for (let c = t.col + 1; c < fila.length; c++) if (fila[c] !== '' && !isNaN(fila[c])) return Number(fila[c]);
-      return 0;
-    };
-    return {
-      menos12: valor(tramos.menos12), de12a24: valor(tramos.de12a24),
-      mayor24: valor(tramos.mayor24), permanecen: valor(tramos.permanecen)
-    };
-  }
-
-  function cargarREM(anio) {
-    if (!remCache[anio]) {
-      remCache[anio] = Promise.all([1,2,3,4,5,6,7,8,9,10,11,12].map(async mes => {
-        try {
-          const libro = await leerLibroREM(anio, mes);
-          return libro ? { mes, ...extraerSeccionD(libro) } : { mes, falta: true };
-        } catch (e) {
-          return { mes, error: String(e) };
-        }
-      }));
-    }
-    return remCache[anio];
-  }
-
-  // ---- GRÁFICO 3 ----
-  async function grafico3() {
-    const anio = Number(filtroAnio.value);
-    const mesSel = Number(filtroMes.value);
-    sub3.textContent = textoPeriodo() + ' · leyendo REM…';
-
-    const meses = await cargarREM(anio);
-    if (anio !== Number(filtroAnio.value) || mesSel !== Number(filtroMes.value)) return;
-
-    const validos = meses.filter(m => !m.falta && !m.error && (mesSel === 0 || m.mes === mesSel));
-    const sumar = k => validos.reduce((s, m) => s + m[k], 0);
-    const menos12 = sumar('menos12'), de12a24 = sumar('de12a24'), mayor24 = sumar('mayor24'), permanecen = sumar('permanecen');
-
-    const numerador   = menos12;
-    const denominador = menos12 + de12a24 + mayor24 + permanecen;
-    const resultado   = pct(numerador, denominador);
-
-    sub3.textContent = textoPeriodo();
-    cumple3.textContent = resultado;
-
-    dibujar('g3', {
-      type: 'bar',
-      data: {
-        labels: [['Menos de', '12 horas'], ['12 - 24', 'horas'], ['Mayor a', '24 horas'], ['Permanecen', 'en UEH']],
-        datasets: [{
-          label: 'Pacientes (ambos sexos)',
-          data: [menos12, de12a24, mayor24, permanecen],
-          backgroundColor: ['#2f9e44', '#f59f00', '#e8590c', '#868e96']
-        }]
-      },
-      options: {
-        responsive: true,
-        aspectRatio: 1.8,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: c => fmt(c.raw) + ' (' + pct(c.raw, denominador) + ')' } }
-        },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-
-    const filaHTML = (nombre, m, clase = '') => {
-      const den = m.menos12 + m.de12a24 + m.mayor24 + m.permanecen;
-      return `<tr class="${clase}"><td>${nombre}</td><td>${fmt(m.menos12)}</td><td>${fmt(m.de12a24)}</td>` +
-             `<td>${fmt(m.mayor24)}</td><td>${fmt(m.permanecen)}</td><td>${fmt(den)}</td><td>${pct(m.menos12, den)}</td></tr>`;
-    };
-    tabla3.innerHTML =
-      '<tr><th>Mes</th><th>Menos de 12 h</th><th>12 - 24 h</th><th>Mayor a 24 h</th><th>Permanecen en UEH</th><th>Denominador</th><th>% menos de 12 h</th></tr>' +
-      validos.map(m => filaHTML(NOMBRE_MES[m.mes], m)).join('') +
-      filaHTML('Total', { menos12, de12a24, mayor24, permanecen }, 'total');
-
-    const problemas = meses.filter(m => (mesSel === 0 || m.mes === mesSel) && (m.falta || m.error));
-    aviso3.textContent = problemas.length
-      ? 'Sin datos: ' + problemas.map(m => NOMBRE_MES[m.mes] + (m.error ? ' (' + m.error + ')' : ' (no está el archivo SA_' + String(m.mes).padStart(2, '0') + ')')).join(' · ')
-      : '';
-  }
-  </script>
 </body>
 </html>
