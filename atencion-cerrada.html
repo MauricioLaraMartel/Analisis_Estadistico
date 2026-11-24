@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atención Cerrada · Indicadores | Hospital San Luis de Buin-Paine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+
+  <!-- Estilos propios de esta página (van después de estilos.css) -->
+  <style>
+    /* Variables que usa el gráfico, conectadas a la paleta institucional */
+    :root {
+      --bg: var(--blanco);
+      --ink: var(--azul-marino);
+      --mute: var(--texto-suave);
+      --line: var(--borde);
+      --soft: var(--gris-fondo);
+      --s1: var(--azul);        /* serie principal */
+      --ref: #8a9097;           /* referencia: total del establecimiento */
+    }
+
+    /* ---------- Cabecera de la página (mismo degradado que la portada) ---------- */
+    .cabecera-pagina {
+      background: linear-gradient(135deg, var(--azul-marino) 0%, var(--azul) 100%);
+      color: var(--blanco);
+      padding: 45px 0 50px;
+    }
+    .etiqueta {
+      display: inline-block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    .cabecera-pagina h1 {
+      color: var(--blanco);
+      font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+      margin-bottom: 8px;
+      text-wrap: balance;
+    }
+    .sub { color: var(--mute); max-width: 70ch; }
+    .cabecera-pagina .sub { color: #d6e4f3; }
+
+    /* ---------- Tarjetas de indicadores clave ---------- */
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 15px;
+      margin-top: 28px;
+    }
+    .kpi {
+      background: var(--blanco);
+      border-radius: var(--radio);
+      border-bottom: 3px solid var(--azul);
+      box-shadow: var(--sombra);
+      padding: 16px 18px;
+    }
+    .kpi b {
+      display: block;
+      color: var(--azul-marino);
+      font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    .kpi span { display: block; color: var(--texto-suave); font-size: 0.85rem; }
+    .kpi.key { border-bottom-color: var(--rojo); }
+    .kpi.key b { color: var(--azul); }
+
+    /* ---------- Contenido ---------- */
+    .contenido { padding: 40px 0 20px; }
+    .tarjeta {
+      background: var(--blanco);
+      border-radius: 12px;
+      box-shadow: var(--sombra);
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .tarjeta h2 { font-size: 1.35rem; }
+    .tarjeta .sub { margin-top: -8px; }
+
+    /* Filtros */
+    .ctrls { display: flex; flex-wrap: wrap; gap: 15px; margin: 4px 0 10px; }
+    .ctrls label {
+      font-size: 0.85rem; color: var(--texto-suave);
+      display: flex; flex-direction: column; gap: 4px; flex: 1 1 240px;
+    }
+    select {
+      font: inherit; font-size: 1rem; min-height: 44px; padding: 8px 12px;
+      border: 1px solid var(--borde); border-radius: var(--radio);
+      background: var(--blanco); color: var(--texto);
+    }
+    select:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+    /* Gráfico de líneas */
+    .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--mute); margin: 6px 0; }
+    .legend i { display: inline-block; width: 18px; height: 2px; vertical-align: middle; margin-right: 6px; }
+    .fig { position: relative; min-height: 340px; }
+    .fig > svg { position: absolute; inset: 0; width: 100%; height: 100%; font-family: "Roboto", Arial, sans-serif; }
+    .tip {
+      position: absolute; pointer-events: none; background: var(--azul-marino); color: var(--blanco);
+      font-size: 0.8rem; padding: 8px 10px; border-radius: 6px; opacity: 0;
+      transition: opacity .1s; white-space: nowrap; z-index: 2;
+    }
+    .note { font-size: 0.85rem; color: var(--mute); margin-top: 8px; }
+
+    /* Barras de comparación entre áreas */
+    .bars { display: grid; gap: 8px; margin-top: 16px; }
+    .bar {
+      display: grid; grid-template-columns: minmax(0, 15em) minmax(0, 1fr) 5.5em;
+      gap: 10px; align-items: center; font-size: 0.9rem;
+    }
+    .bar .t { height: 18px; background: var(--soft); border-radius: 0 4px 4px 0; }
+    .bar .f { height: 100%; background: var(--s1); border-radius: 0 4px 4px 0; }
+    .bar.tot { font-weight: 500; }
+    .bar.tot .f { background: var(--ref); }
+    .bar .v { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    /* Tabla mensual */
+    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+    th, td { padding: 6px 8px; border-bottom: 1px solid var(--borde); text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--texto-suave); font-weight: 500; background: var(--azul-claro); }
+    .scroll { overflow-x: auto; margin-top: 8px; }
+    details { margin-top: 24px; }
+    summary {
+      cursor: pointer; min-height: 44px; display: flex; align-items: center;
+      font-weight: 500; color: var(--azul);
+    }
+    summary:hover { color: var(--azul-oscuro); }
+
+    @media (max-width: 600px) {
+      .bar { grid-template-columns: minmax(0, 1fr) 5em; }
+      .bar .n { grid-column: 1 / -1; }
+      .tarjeta { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="barra-gobierno">
+    <span class="azul"></span>
+    <span class="rojo"></span>
+  </div>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado-fila">
+      <a href="index.html" class="marca">
+        <div class="marca-texto">
+          <span class="marca-red">Servicio de Salud Metropolitano Sur</span>
+          <strong>Hospital San Luis de Buin-Paine</strong>
+          <span class="marca-unidad">Unidad de Estadística</span>
+        </div>
+      </a>
+      <nav class="menu">
+        <a href="index.html">⟵ Inicio</a>
+        <a href="manuales.html">Manuales</a>
+        <a href="index.html#contacto">Contacto</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="cabecera-pagina">
+    <div class="contenedor">
+      <span class="etiqueta">Producción · Atención Cerrada</span>
+      <h1 id="titulo">Indicadores de atención cerrada 2026</h1>
+      <p class="sub" id="sub">Cargando datos…</p>
+      <div class="kpis" id="kpis"></div>
+    </div>
+  </section>
+
+  <main class="contenido fondo-gris">
+    <div class="contenedor">
+
+      <article class="tarjeta">
+        <h2 id="t1"></h2>
+        <div class="ctrls">
+          <label>Indicador<select id="ind"></select></label>
+          <label>Área<select id="area"></select></label>
+        </div>
+        <div class="legend" id="leg"></div>
+        <div class="fig" id="fig"><svg id="svg" role="img"></svg><div class="tip" id="tip"></div></div>
+        <p class="note" id="n1"></p>
+      </article>
+
+      <article class="tarjeta">
+        <h2 id="t2"></h2>
+        <p class="sub" id="s2"></p>
+        <div class="bars" id="bars"></div>
+        <details>
+          <summary>Ver tabla mensual</summary>
+          <div class="scroll"><table id="tbl"></table></div>
+        </details>
+      </article>
+
+    </div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <strong>Hospital San Luis de Buin-Paine</strong>
+      <p>Unidad de Estadística · Servicio de Salud Metropolitano Sur</p>
+      <p class="pie-nota">Datos agregados. No contiene información de pacientes.</p>
+    </div>
+  </footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+{
+// ===== RUTA DEL EXCEL =====
+// Carpeta real: PAGINA ESTADÍSTICA / atencion_cerrada / indicadores_ac_2026.xlsx
+// Se prueban en orden; la primera que exista se usa (según dónde esté guardado este .html)
+const RUTAS=[
+ 'PAGINA ESTADÍSTICA/atencion_cerrada/indicadores_ac_2026.xlsx',  // html junto a la carpeta PAGINA ESTADÍSTICA
+ 'atencion_cerrada/indicadores_ac_2026.xlsx',                     // html dentro de PAGINA ESTADÍSTICA
+ 'indicadores_ac_2026.xlsx',                                      // html dentro de atencion_cerrada
+ '/PAGINA ESTADÍSTICA/atencion_cerrada/indicadores_ac_2026.xlsx'  // desde la raíz del sitio
+];
+
+const TOT='Establecimiento (total)';
+const num=v=>v==null||v===''?null:(typeof v==='number'?v:(isNaN(+String(v).replace(',','.'))?null:+String(v).replace(',','.')));
+
+async function buscarExcel(){
+ for(const ruta of RUTAS){
+  try{const r=await fetch(encodeURI(ruta));if(r.ok){console.log('Excel encontrado en:',ruta);return r.arrayBuffer();}}catch(e){}
+ }
+ throw new Error('No se encontró el Excel. Rutas probadas: '+RUTAS.join(' | '));
+}
+
+buscarExcel()
+.then(buf=>{
+ const wb=XLSX.read(buf,{type:'array'});
+ const ws=wb.Sheets['DatosOperacion']||wb.Sheets[wb.SheetNames[0]];
+ const filas=XLSX.utils.sheet_to_json(ws,{header:1,defval:null}).slice(1);
+ const D={};
+ for(const r of filas){
+  if(r[0]==null||r[6]==null)continue;
+  // Col E = nivel (0 = total), F = nombre del área, G = glosa, H = acum, I..T = Ene..Dic
+  const area=num(r[4])===0?TOT:String(r[5]).split(' - ').slice(1).join(' - ')||String(r[5]);
+  (D[area]=D[area]||{})[String(r[6]).trim()]={acum:num(r[7]),m:r.slice(8,20).map(num).concat(Array(12).fill(null)).slice(0,12)};
+ }
+ if(!D[TOT])throw new Error('El archivo no trae la fila de nivel 0 (Datos Establecimiento).');
+ iniciar(D);
+})
+.catch(e=>{document.getElementById('sub').textContent='Error al cargar los datos: '+e.message;});
+
+function iniciar(D){
+const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const UNIT={'Indice Ocupacional':'%','Letalidad':'%','Promedio Días de Estada':' días','Indice de Rotación':'','Promedio Cama Disponibles':' camas'};
+const RATE=new Set(Object.keys(UNIT));
+const NOMBRE={'Dias Cama Disponibles':'Días cama disponibles','Dias Cama Ocupados':'Días cama ocupados','Dias de Estada':'Días de estada','Promedio Cama Disponibles':'Promedio camas disponibles','Numero de Egresos':'Número de egresos','Egresos Fallecidos':'Egresos fallecidos','Indice Ocupacional':'Índice ocupacional','Promedio Días de Estada':'Promedio días de estada','Indice de Rotación':'Índice de rotación','Letalidad':'Letalidad','Traslados':'Traslados'};
+const areas=Object.keys(D);
+const inds=Object.keys(NOMBRE);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(v,ind)=>v==null?'—':(RATE.has(ind)?v.toLocaleString('es-CL',{maximumFractionDigits:2}):v.toLocaleString('es-CL'))+(UNIT[ind]||'');
+// valor anual: acumulado si existe; si no (rotación), promedio de meses con dato
+const anual=(a,ind)=>{const r=D[a][ind];if(!r)return null;if(r.acum!=null)return r.acum;const m=r.m.filter(v=>v!=null);return m.length?+(m.reduce((x,y)=>x+y,0)/m.length).toFixed(2):null};
+
+$('ind').innerHTML=inds.map(i=>`<option value="${esc(i)}">${esc(NOMBRE[i])}</option>`).join('');
+$('area').innerHTML=areas.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+$('ind').value='Indice Ocupacional';$('area').value=D['Área Médico-Quirúrgico Cuidados Medios']?'Área Médico-Quirúrgico Cuidados Medios':TOT;
+
+const T=D[TOT];
+const ult=T['Indice Ocupacional'].m.reduce((k,v,i)=>v!=null?i:k,-1);
+const io=T['Indice Ocupacional'].acum;
+$('titulo').textContent=`Índice ocupacional del establecimiento: ${fmt(io,'Indice Ocupacional')} acumulado`;
+$('sub').textContent=`Indicadores de atención cerrada, enero a ${['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][ult]} de 2026.`+(ult<11?' Los meses siguientes aún no tienen datos.':'');
+$('kpis').innerHTML=[
+ ['key',fmt(T['Indice Ocupacional'].acum,'Indice Ocupacional'),'Índice ocupacional acumulado'],
+ ['',fmt(T['Numero de Egresos'].acum,'Numero de Egresos'),'Egresos acumulados'],
+ ['',fmt(T['Promedio Días de Estada'].acum,'Promedio Días de Estada'),'Promedio días de estada'],
+ ['',fmt(T['Letalidad'].acum,'Letalidad'),'Letalidad ('+T['Egresos Fallecidos'].acum+' fallecidos)'],
+ ['',fmt(T['Promedio Cama Disponibles'].acum,'Promedio Cama Disponibles'),'Promedio camas disponibles']
+].map(k=>`<div class="kpi ${k[0]}"><b>${esc(k[1])}</b><span>${esc(k[2])}</span></div>`).join('');
+
+const svg=$('svg'),tip=$('tip'),fig=$('fig');
+let series=[];
+function draw(){
+ const W=svg.clientWidth,H=svg.clientHeight;if(!W)return;
+ const small=W<520,m={l:small?40:56,r:16,t:16,b:32},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ const ind=$('ind').value;
+ const vals=series.flatMap(s=>s.v).filter(v=>v!=null);
+ let max=Math.max(...vals,0);const pct=UNIT[ind]==='%';
+ if(pct&&max>60)max=100;
+ const step=niceStep(max/4);max=Math.ceil(max/step)*step||1;
+ const x=i=>m.l+iw*(i+.5)/12,y=v=>m.t+ih*(1-v/max);
+ let g='';
+ for(let v=0;v<=max+1e-9;v+=step)g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--mute)">${esc(+v.toFixed(2))}${pct?'%':''}</text>`;
+ MES.forEach((mm,i)=>{if(!small||i%2===0)g+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="12" fill="${i>ult?'var(--line)':'var(--mute)'}">${mm}</text>`});
+ series.forEach(s=>{
+  // segmentos: un null corta la línea (no se dibuja como 0)
+  let d='',pen=false;s.v.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i)+','+y(v);pen=true});
+  g+=`<path d="${d}" fill="none" stroke="${s.c}" stroke-width="2" ${s.dash?'stroke-dasharray="5 4"':''}/>`;
+  s.v.forEach((v,i)=>{if(v!=null)g+=`<circle cx="${x(i)}" cy="${y(v)}" r="${s.dash?3:4}" fill="${s.c}" stroke="var(--bg)" stroke-width="2"/>`});
+ });
+ g+=`<line id="xh" y1="${m.t}" y2="${m.t+ih}" stroke="var(--mute)" opacity="0"/>`;
+ svg.innerHTML=g;
+ svg.onpointermove=e=>{const r=svg.getBoundingClientRect();const i=Math.max(0,Math.min(11,Math.floor((e.clientX-r.left-m.l)/iw*12)));
+  const xh=svg.querySelector('#xh');if(series.every(s=>s.v[i]==null)){tip.style.opacity=0;xh.setAttribute('opacity',0);return}
+  xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.setAttribute('opacity',.5);
+  tip.innerHTML=`<b>${MES[i]} 2026</b>`+series.map(s=>`<br>${esc(s.n)}: ${esc(fmt(s.v[i],ind))}`).join('');
+  tip.style.opacity=1;const tx=x(i)+12,tw=tip.offsetWidth;tip.style.left=(tx+tw>W?x(i)-tw-12:tx)+'px';tip.style.top=m.t+'px'};
+ svg.onpointerleave=()=>{tip.style.opacity=0;const xh=svg.querySelector('#xh');if(xh)xh.setAttribute('opacity',0)};
+}
+function niceStep(r){const p=10**Math.floor(Math.log10(r||1)),n=r/p;return (n<=1?1:n<=2?2:n<=5?5:10)*p}
+
+function render(){
+ const ind=$('ind').value,a=$('area').value,nm=NOMBRE[ind];
+ const r=D[a][ind];
+ series=[{n:a,v:r?r.m:Array(12).fill(null),c:'var(--s1)'}];
+ // referencia del establecimiento sólo para tasas (misma unidad y escala comparable)
+ if(a!==TOT&&RATE.has(ind)&&ind!=='Promedio Cama Disponibles'&&D[TOT][ind])series.push({n:'Establecimiento',v:D[TOT][ind].m,c:'var(--ref)',dash:1});
+ $('t1').textContent=`${nm} por mes`;
+ $('leg').innerHTML=series.length>1?series.map(s=>`<span><i style="background:${s.c}"></i>${esc(s.n)}</span>`).join(''):'';
+ svg.setAttribute('aria-label',`${nm}, ${a}, 2026`);
+ $('n1').textContent=!r?`El establecimiento no informa “${nm}” a nivel total; elige un área.`:
+  (RATE.has(ind)?'Tasa mensual; la línea gris punteada es el total del establecimiento.':'Conteo mensual. No se compara con el total en el mismo eje porque la escala del establecimiento es mucho mayor.');
+ draw();
+ // comparación entre áreas
+ const rows=areas.map(x=>({a:x,v:anual(x,ind)})).filter(o=>o.v!=null);
+ const mx=UNIT[ind]==='%'&&ind!=='Letalidad'?100:(Math.max(...rows.map(o=>o.v),0)||1);
+ $('t2').textContent=`${nm}: comparación entre áreas`;
+ $('s2').textContent=ind==='Indice de Rotación'?'Promedio de los meses con dato.':'Valor acumulado del año.';
+ $('bars').innerHTML=rows.map(o=>`<div class="bar ${o.a===TOT?'tot':''}"><span class="n">${esc(o.a)}</span><div class="t"><div class="f" style="width:${(o.v/mx*100).toFixed(1)}%"></div></div><span class="v">${esc(fmt(o.v,ind))}</span></div>`).join('');
+ // tabla
+ const tr=areas.filter(x=>D[x][ind]);
+ $('tbl').innerHTML=`<tr><th>Área</th>${MES.slice(0,ult+1).map(mm=>`<th>${mm}</th>`).join('')}<th>Acum.</th></tr>`+
+  tr.map(x=>`<tr><td>${esc(x)}</td>${D[x][ind].m.slice(0,ult+1).map(v=>`<td>${esc(fmt(v,ind))}</td>`).join('')}<td>${esc(fmt(anual(x,ind),ind))}</td></tr>`).join('');
+}
+$('ind').onchange=render;$('area').onchange=render;
+const ro=new ResizeObserver(draw);ro.observe(svg);
+render();
+}
+}
+</script>
+</body>
+</html>

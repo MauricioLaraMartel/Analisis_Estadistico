@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unidad de Estadística | Hospital San Luis de Buin-Paine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+
+  <!-- Estos estilos van después de estilos.css para que tengan prioridad -->
+  <style>
+    /* Portada: "Unidad de Estadística" y "Estadísticas hospitalarias" centrados */
+    .portada {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 50vh;          /* usa 100vh si quieres pantalla completa */
+      text-align: center;
+    }
+
+    .portada .contenedor {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .portada .etiqueta,
+    .portada h1 {
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+
+    /* Texto de "Nosotros" justificado */
+    #nosotros p {
+      text-align: justify;
+      hyphens: auto;             /* corta palabras largas para evitar espacios grandes */
+      -webkit-hyphens: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="barra-gobierno">
+    <span class="azul"></span>
+    <span class="rojo"></span>
+  </div>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado-fila">
+      <a href="#" class="marca">
+        <div class="marca-texto">
+          <span class="marca-red">Servicio de Salud Metropolitano Sur</span>
+          <strong>Hospital San Luis de Buin-Paine</strong>
+          <span class="marca-unidad">Unidad de Estadística</span>
+        </div>
+      </a>
+      <nav class="menu">
+        <a href="manuales.html">Manuales</a>
+        <a href="#nosotros">Nosotros</a>
+        <a href="#contacto">Contacto</a>
+      
+      </nav>
+    </div>
+  </header>
+
+  <section class="portada"id="Produccion">
+  <div class="contenedor">
+    <h1>Producción</h1>
+    <div class="botones">
+      <a href="urgencia.html" class="boton">Urgencia</a>
+      <a href="pabellon.html" class="boton">Pabellón</a>
+      <a href="atencion-cerrada.html" class="boton">Atención Cerrada</a>
+      <a href="produccion-medica.html" class="boton">Ambulatorio Médica</a>
+      <a href="produccion-no-medica.html" class="boton">Ambulatorio no Médica</a>
+      
+    </div>
+  </div>
+</section>
+
+<section class="portada" id="indicadores">
+  <div class="contenedor">
+    <h1>Indicadores</h1>
+    <div class="botones">
+      <a href="comges.html" class="boton">Comges</a>
+      <a href="meta18834.html" class="boton">Meta 18.834</a>
+      <a href="meta19664.html" class="boton">Meta 19.664</a>
+      <a href="meta20707.html" class="boton">Meta 20.707</a>
+      
+    </div>
+  </div>
+</section>
+
+  <section id="nosotros">
+    <div class="contenedor">
+      <h2>Nosotros</h2>
+      <p>Somos la Unidad de Estadística del Hospital San Luis de Buin–Paine. Recopilamos, procesamos, validamos y analizamos la información de la actividad asistencial y administrativa de forma oportuna, confiable y segura, de acuerdo con la normativa del Ministerio de Salud. Nuestros datos apoyan la toma de decisiones y la planificación sanitaria en beneficio de la comunidad de Buin y Paine. Queremos ser una unidad referente en gestión de la información en salud dentro de la red asistencial, reconocida por la calidad e integridad de sus datos y por un equipo comprometido que transforma la información en conocimiento para mejorar la atención de nuestros usuarios.</p>
+    </div>
+  </section>
+
+  <section id="contacto" class="fondo-gris">
+    <div class="contenedor">
+      <h2>Contacto</h2>
+      <p>Correo: Mauricio.laram@redsalud.gob.cl</p>
+      <p>Anexo: 264881</p>
+      <p>Teléfono: 2-2 5767881</p>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <strong>Hospital San Luis de Buin-Paine</strong>
+      <p>Unidad de Estadística · Servicio de Salud Metropolitano Sur</p>
+      <p class="pie-nota">Datos agregados. No contiene información de pacientes.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

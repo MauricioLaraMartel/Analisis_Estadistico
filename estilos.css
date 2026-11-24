@@ -1,0 +1,279 @@
+/* =========================================================
+   Unidad de Estadística · Hospital San Luis de Buin-Paine
+   Paleta institucional (Gobierno de Chile / SSMS)
+   ========================================================= */
+
+:root {
+  --azul: #0f69b4;          /* azul institucional */
+  --azul-oscuro: #0a4f8a;   /* azul para hover */
+  --azul-marino: #0a132d;   /* encabezado y pie */
+  --azul-claro: #e8f1fa;    /* fondos suaves */
+  --rojo: #eb3c46;          /* acento institucional */
+  --texto: #2b2b2b;
+  --texto-suave: #5f6b7a;
+  --gris-fondo: #f4f6f9;
+  --borde: #dde3ea;
+  --blanco: #ffffff;
+  --sombra: 0 4px 14px rgba(10, 19, 45, 0.08);
+  --radio: 8px;
+}
+
+/* ---------- Base ---------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Roboto", Arial, sans-serif;
+  color: var(--texto);
+  background-color: var(--blanco);
+  line-height: 1.6;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+h1, h2, h3 {
+  color: var(--azul-marino);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+/* Línea de acento bajo los títulos */
+h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(to right, var(--azul) 50%, var(--rojo) 50%);
+  border-radius: 2px;
+}
+
+/* ---------- Barra de gobierno (azul y rojo) ---------- */
+.barra-gobierno {
+  display: flex;
+  height: 6px;
+}
+
+.barra-gobierno .azul {
+  flex: 1;
+  background-color: var(--azul);
+}
+
+.barra-gobierno .rojo {
+  flex: 2;
+  background-color: var(--rojo);
+}
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+  background-color: var(--blanco);
+  border-bottom: 1px solid var(--borde);
+  box-shadow: var(--sombra);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.encabezado-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
+.marca {
+  text-decoration: none;
+}
+
+.marca-texto {
+  display: flex;
+  flex-direction: column;
+  border-left: 4px solid var(--azul);
+  padding-left: 12px;
+}
+
+.marca-red {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.marca-texto strong {
+  font-size: 1.2rem;
+  color: var(--azul-marino);
+}
+
+.marca-unidad {
+  font-size: 0.9rem;
+  color: var(--azul);
+  font-weight: 500;
+}
+
+.menu {
+  display: flex;
+  gap: 8px;
+}
+
+.menu a {
+  text-decoration: none;
+  color: var(--azul-marino);
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: var(--radio);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.menu a:hover {
+  background-color: var(--azul-claro);
+  color: var(--azul);
+}
+
+/* ---------- Portada ---------- */
+.portada {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  text-align: center;
+  background: linear-gradient(135deg, var(--azul-marino) 0%, var(--azul) 100%);
+  color: var(--blanco);
+  padding: 60px 0;
+}
+
+/* NUEVO: línea blanca que separa los bloques de botones */
+.portada + .portada {
+  border-top: 4px solid var(--blanco);   /* cambia 4px por el grosor que quieras */
+}
+
+.portada .contenedor {
+  max-width: 900px;
+}
+
+.portada h1 {
+  color: var(--blanco);
+  font-size: 2.4rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+/* ---------- Botones ---------- */
+.botones {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.boton {
+  display: inline-block;
+  min-width: 190px;
+  padding: 14px 24px;
+  background-color: var(--blanco);
+  color: var(--azul);
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: var(--radio);
+  border-bottom: 3px solid var(--rojo);
+  box-shadow: var(--sombra);
+  transition: transform 0.2s, background-color 0.2s, color 0.2s;
+}
+
+.boton:hover {
+  background-color: var(--azul-claro);
+  color: var(--azul-oscuro);
+  transform: translateY(-3px);
+}
+
+/* ---------- Secciones ---------- */
+section {
+  padding: 60px 0;
+}
+
+#nosotros p {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  font-size: 1.05rem;
+  color: var(--texto);
+  background-color: var(--azul-claro);
+  border-left: 5px solid var(--azul);
+  padding: 25px 30px;
+  border-radius: var(--radio);
+}
+
+.fondo-gris {
+  background-color: var(--gris-fondo);
+}
+
+#contacto p {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  color: var(--texto-suave);
+}
+
+/* ---------- Pie de página ---------- */
+.pie {
+  background-color: var(--azul-marino);
+  color: #c9d3e0;
+  text-align: center;
+  padding: 35px 0;
+  border-top: 5px solid var(--rojo);
+}
+
+.pie strong {
+  color: var(--blanco);
+  font-size: 1.1rem;
+}
+
+.pie p {
+  margin-top: 5px;
+}
+
+.pie-nota {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 700px) {
+  .encabezado-fila {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .portada h1 {
+    font-size: 1.8rem;
+  }
+
+  .boton {
+    width: 100%;
+  }
+
+  #nosotros p {
+    padding: 20px;
+  }
+}
