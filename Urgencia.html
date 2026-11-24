@@ -157,7 +157,9 @@
   // 1º se busca el RESUMEN (liviano, sin datos de pacientes: este es el que se sube a GitHub)
   // 2º si no está, se busca el EXCEL completo (sirve en tu computador con Live Server)
   // 3º si tampoco está, aparece el botón "Cargar Excel" para elegirlo desde el computador
-  const RESUMEN = 'bdurgencia/resumen_urgencia.json';
+  // CORREGIDO: tu archivo se llama "l.urgencia.json"; antes el código buscaba "resumen_urgencia.json" (→ 404).
+  // Se prueban ambos nombres, así funciona con cualquiera de los dos.
+  const RESUMENES = ['bdurgencia/l.urgencia.json', 'bdurgencia/resumen_urgencia.json'];
   const ARCHIVO = 'bdurgencia/l.urgencia.xlsx';
 
   const CARPETA_REM = 'REM';
@@ -212,11 +214,13 @@
   }
 
   async function cargarDatos() {
-    // 1º Resumen JSON
-    try {
-      const r = await fetch(RESUMEN);
-      if (r.ok) { iniciar(await r.json(), 'resumen'); return; }
-    } catch (e) {}
+    // 1º Resumen JSON (CORREGIDO: prueba cada nombre posible)
+    for (const ruta of RESUMENES) {
+      try {
+        const r = await fetch(ruta);
+        if (r.ok) { iniciar(await r.json(), 'resumen'); return; }
+      } catch (e) {}
+    }
 
     // 2º Excel completo
     try {
