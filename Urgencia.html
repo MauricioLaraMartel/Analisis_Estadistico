@@ -22,6 +22,14 @@
     .filtros select { font:inherit; font-size:1rem; padding:8px 12px; border-radius:8px; border:1px solid #d1d5db; min-width:180px; }
     #estado { color:#6b7280; font-size:.9rem; margin-left:auto; }
 
+    /* ---- Botones de carga / descarga de datos ---- */
+    .acciones { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .btn { font:inherit; font-size:.9rem; font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;
+           border:1px solid #0f6cbd; background:#0f6cbd; color:#fff; }
+    .btn.sec { background:#fff; color:#0f6cbd; }
+    .btn:hover { filter:brightness(1.08); }
+    .oculto { display:none !important; }
+
     /* ---- Tarjetas de gráficos ---- */
     .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:24px; }
     .card h2 { font-size:1.1rem; margin:0 0 4px; }
@@ -40,16 +48,15 @@
     /* ---- Gráficos 2 y 3 lado a lado ---- */
     .fila-2 { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:24px; margin-bottom:24px; }
     .fila-2 .card { margin-bottom:0; display:flex; flex-direction:column; }
-    .fila-2 h2 { min-height:2.6em; }                       /* títulos de igual alto */
+    .fila-2 h2 { min-height:2.6em; }
     .fila-2 .cumplimiento span { font-size:.85rem; }
     .fila-2 table { font-size:.82rem; }
     .fila-2 th, .fila-2 td { padding:6px 8px; }
-    .tabla-scroll { overflow-x:auto; }                     /* scroll lateral si la tabla no cabe */
-    .tabla-larga { max-height:300px; overflow-y:auto; }      /* tabla de meses con scroll vertical */
+    .tabla-scroll { overflow-x:auto; }
+    .tabla-larga { max-height:300px; overflow-y:auto; }
     .tabla-larga th { position:sticky; top:0; background:#fff; }
     canvas { max-width:100%; }
 
-    /* Pantallas angostas (notebook pequeño, tablet, celular): uno debajo del otro */
     @media (max-width: 1000px) {
       .fila-2 { grid-template-columns:1fr; }
       .fila-2 h2 { min-height:0; }
@@ -91,7 +98,18 @@
           <option value="12">Diciembre</option>
         </select>
       </label>
-      <span id="estado">Leyendo Excel… (puede tardar unos segundos)</span>
+
+      <div class="acciones">
+        <!-- Aparece solo si no se encontró ni el resumen ni el Excel -->
+        <label class="btn oculto" id="btnCargar" style="flex-direction:row;color:#fff">
+          Cargar Excel de urgencia…
+          <input type="file" id="archivoLocal" accept=".xlsx,.xlsm,.xls" hidden>
+        </label>
+        <!-- Aparece cuando hay Excel leído: genera el JSON liviano para subir a GitHub -->
+        <button class="btn sec oculto" id="btnResumen" type="button">Descargar resumen (para GitHub)</button>
+      </div>
+
+      <span id="estado">Cargando datos…</span>
     </section>
 
     <!-- ============ GRÁFICO 1 ============ -->
@@ -102,7 +120,6 @@
       <div class="tabla-scroll"><table id="tabla1"></table></div>
     </article>
 
-    <!-- ============ GRÁFICOS 2 Y 3, UNO AL LADO DEL OTRO ============ -->
     <section class="fila-2">
 
     <!-- ============ GRÁFICO 2 ============ -->
@@ -131,31 +148,35 @@
     </article>
 
     </section>
-
-    <!-- Aquí irán los próximos gráficos -->
   </main>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
   // ======================= CONFIGURACIÓN =======================
-  const ARCHIVO = 'bdurgencia/l.urgencia.xlsx';   // <-- carpeta/nombre del Excel
+  // 1º se busca el RESUMEN (liviano, sin datos de pacientes: este es el que se sube a GitHub)
+  // 2º si no está, se busca el EXCEL completo (sirve en tu computador con Live Server)
+  // 3º si tampoco está, aparece el botón "Cargar Excel" para elegirlo desde el computador
+  const RESUMEN = 'bdurgencia/resumen_urgencia.json';
+  const ARCHIVO = 'bdurgencia/l.urgencia.xlsx';
 
-  // Carpeta de los REM: REM/<año>/REM_A/SA_01.xlsx ... SA_12.xlsx
   const CARPETA_REM = 'REM';
-  const EXTENSIONES_REM = ['.xlsx', '.xlsm', '.xls'];   // prueba estas extensiones en orden
+  const EXTENSIONES_REM = ['.xlsx', '.xlsm', '.xls'];
 
   const NOMBRE_MES = ['', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
                       'Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const TIPOS = ['ATENCION MEDICA GINECO-OBSTETRA', 'ATENCION POR MATRONA', 'ATENCION MEDICA NIÑO Y ADULTO'];
   const fmt = n => n.toLocaleString('es-CL');
   const pct = (parte, total) => total ? (100 * parte / total).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%' : '–';
-  const esUno = v => String(v ?? '').trim() === '1';   // las columnas de 30 min traen 1 o vacío
+  const esUno = v => String(v ?? '').trim() === '1';
 
-  let datos = [];          // todas las filas del Excel (solo las columnas que usamos)
-  let graficos = {};       // gráficos ya dibujados, para poder actualizarlos
+  // Cada elemento de "datos" es un GRUPO: { anio, mes, tipo, estado, categoria, hasta30, mas30, n }
+  // donde n = cantidad de atenciones con esas características.
+  let datos = [];
+  let graficos = {};
+  let iniciado = false;
+  const contar = arr => arr.reduce((s, x) => s + x.n, 0);
 
-  // Saca año y mes desde "Fecha Admisión" (dd/mm/aaaa). Si no viene, usa la columna MES.
   function anioMes(fila) {
     const f = fila['Fecha Admisión'];
     if (typeof f === 'string' && f.includes('/')) {
@@ -166,40 +187,102 @@
     return [null, Number(fila['MES'])];
   }
 
-  // ======================= 1. LEER EL EXCEL =======================
-  fetch(ARCHIVO)
-    .then(r => { if (!r.ok) throw 'No se encontró ' + ARCHIVO; return r.arrayBuffer(); })
-    .then(buf => {
-      const libro = XLSX.read(buf, { type: 'array', dense: true });
-      const filas = XLSX.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]], { raw: false });
+  // ======================= 1. CARGAR LOS DATOS =======================
 
-      datos = filas.map(f => {
-        const [anio, mes] = anioMes(f);
-        return {
-          anio, mes,
-          tipo:      String(f['Clasificación'] || '').trim(),
-          estado:    String(f['ESTADO CITA']   || '').trim(),
-          categoria: String(f['Primera Categorización'] || '').trim(),
-          hasta30:   esUno(f['MENOR IGUAL 30 MIN']),
-          mas30:     esUno(f['MAYOR 30 MIN'])
-        };
-      });
+  // Lee el Excel y lo agrupa (cuenta cuántas atenciones hay de cada combinación)
+  function resumirExcel(buf) {
+    const libro = XLSX.read(buf, { type: 'array', dense: true });
+    const filas = XLSX.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]], { raw: false });
+    const grupos = new Map();
+    for (const f of filas) {
+      const [anio, mes] = anioMes(f);
+      const g = {
+        anio, mes,
+        tipo:      String(f['Clasificación'] || '').trim(),
+        estado:    String(f['ESTADO CITA']   || '').trim(),
+        categoria: String(f['Primera Categorización'] || '').trim(),
+        hasta30:   esUno(f['MENOR IGUAL 30 MIN']) ? 1 : 0,
+        mas30:     esUno(f['MAYOR 30 MIN']) ? 1 : 0
+      };
+      const clave = [g.anio, g.mes, g.tipo, g.estado, g.categoria, g.hasta30, g.mas30].join('|');
+      if (grupos.has(clave)) grupos.get(clave).n++;
+      else grupos.set(clave, { ...g, n: 1 });
+    }
+    return [...grupos.values()];
+  }
 
-      // Llenar el filtro de años con los que existen en el Excel
-      const anios = [...new Set(datos.map(d => d.anio).filter(Boolean))].sort((a, b) => b - a);
-      filtroAnio.innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join('');
+  async function cargarDatos() {
+    // 1º Resumen JSON
+    try {
+      const r = await fetch(RESUMEN);
+      if (r.ok) { iniciar(await r.json(), 'resumen'); return; }
+    } catch (e) {}
 
-      estado.textContent = fmt(datos.length) + ' atenciones leídas';
+    // 2º Excel completo
+    try {
+      estado.textContent = 'Leyendo Excel… (puede tardar unos segundos)';
+      const r = await fetch(ARCHIVO);
+      if (r.ok) { iniciar(resumirExcel(await r.arrayBuffer()), 'excel'); return; }
+    } catch (e) {}
+
+    // 3º Nada encontrado: pedir el archivo al usuario
+    estado.textContent = 'No se encontraron los datos de urgencia. Carga el Excel desde tu computador.';
+    btnCargar.classList.remove('oculto');
+    iniciarFiltros();   // igual se puede ver el gráfico 3 (REM)
+  }
+
+  // Excel elegido desde el computador: se lee en el navegador, no se sube a ningún lado
+  archivoLocal.addEventListener('change', async () => {
+    const archivo = archivoLocal.files[0];
+    if (!archivo) return;
+    estado.textContent = 'Leyendo ' + archivo.name + '…';
+    try {
+      iniciar(resumirExcel(await archivo.arrayBuffer()), 'excel');
+      btnCargar.classList.add('oculto');
+    } catch (e) {
+      estado.textContent = 'Error al leer el archivo: ' + e;
+    }
+  });
+
+  // Descarga el resumen JSON (este es el archivo que se sube a GitHub)
+  btnResumen.addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(datos)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'resumen_urgencia.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  function iniciar(nuevosDatos, origen) {
+    datos = nuevosDatos;
+    estado.textContent = fmt(contar(datos)) + ' atenciones leídas' + (origen === 'resumen' ? ' (resumen)' : ' (Excel)');
+    btnResumen.classList.toggle('oculto', origen !== 'excel');
+    iniciarFiltros();
+  }
+
+  function iniciarFiltros() {
+    // Años de los datos; si no hay, se usan el año actual y los 4 anteriores (para el REM)
+    let anios = [...new Set(datos.map(d => d.anio).filter(Boolean))].sort((a, b) => b - a);
+    if (!anios.length) { const hoy = new Date().getFullYear(); anios = [0,1,2,3,4].map(i => hoy - i); }
+    const anterior = filtroAnio.value;
+    filtroAnio.innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join('');
+    if (anios.includes(Number(anterior))) filtroAnio.value = anterior;
+
+    if (!iniciado) {
       filtroAnio.addEventListener('change', actualizarTodo);
       filtroMes.addEventListener('change', actualizarTodo);
-      actualizarTodo();
-    })
-    .catch(e => estado.textContent = 'Error: ' + e + ' — ¿abriste la página con Live Server?');
+      iniciado = true;
+    }
+    actualizarTodo();
+  }
+
+  cargarDatos();
 
   // ======================= 2. FILTRAR =======================
   function datosFiltrados() {
     const anio = Number(filtroAnio.value);
-    const mes  = Number(filtroMes.value);     // 0 = Total
+    const mes  = Number(filtroMes.value);
     return datos.filter(d => d.anio === anio && (mes === 0 || d.mes === mes));
   }
 
@@ -208,31 +291,27 @@
     return (mes === 0 ? 'Total año ' : NOMBRE_MES[mes] + ' ') + filtroAnio.value;
   }
 
-  // Se ejecuta al cargar y cada vez que cambias un filtro
   function actualizarTodo() {
     const d = datosFiltrados();
     grafico1(d);
     grafico2(d);
     grafico3();
-    // grafico4(d);   <-- los próximos gráficos se agregan aquí
   }
 
   // ======================= 3. GRÁFICOS =======================
-
-  // Dibuja un gráfico nuevo o actualiza uno existente
   function dibujar(id, config) {
     if (graficos[id]) graficos[id].destroy();
     graficos[id] = new Chart(document.getElementById(id), config);
   }
 
-  // ---- GRÁFICO 1: Demanda / Atendidos / Retiro sin alta por tipo de atención ----
+  // ---- GRÁFICO 1 ----
   function grafico1(d) {
     const demanda = [], atendidos = [], retiros = [];
     TIPOS.forEach(t => {
       const filas = d.filter(x => x.tipo === t);
-      demanda.push(filas.length);
-      atendidos.push(filas.filter(x => x.estado === 'ATENDIDO').length);
-      retiros.push(filas.filter(x => x.estado === 'RETIRO SIN ALTA').length);
+      demanda.push(contar(filas));
+      atendidos.push(contar(filas.filter(x => x.estado === 'ATENDIDO')));
+      retiros.push(contar(filas.filter(x => x.estado === 'RETIRO SIN ALTA')));
     });
 
     sub1.textContent = textoPeriodo();
@@ -253,7 +332,6 @@
         plugins: {
           tooltip: {
             callbacks: {
-              // Muestra el número y, para Atendidos y Retiro, el % sobre la demanda
               label: c => {
                 let texto = c.dataset.label + ': ' + fmt(c.raw);
                 if (c.datasetIndex > 0) texto += ' (' + pct(c.raw, demanda[c.dataIndex]) + ')';
@@ -266,7 +344,6 @@
       }
     });
 
-    // Tabla con los números exactos y porcentajes
     const suma = a => a.reduce((s, n) => s + n, 0);
     const nombres = ['Atención médica gineco-obstetra', 'Atención por matrona', 'Atención médica niño y adulto'];
     tabla1.innerHTML =
@@ -279,15 +356,15 @@
       `<td>${pct(suma(atendidos), suma(demanda))}</td><td>${pct(suma(retiros), suma(demanda))}</td></tr>`;
   }
 
-  // ---- GRÁFICO 2: C2 atendidos en Atención médica niño y adulto, según tiempo ----
+  // ---- GRÁFICO 2 ----
   function grafico2(d) {
     const c2 = d.filter(x => x.tipo === 'ATENCION MEDICA NIÑO Y ADULTO'
                           && x.categoria === 'C2'
                           && x.estado === 'ATENDIDO');
-    const total   = c2.length;
-    const mas30   = c2.filter(x => x.mas30).length;
-    const hasta30 = c2.filter(x => x.hasta30).length;
-    const cumplimiento = pct(hasta30, total);   // C2 en 30 min o menos ÷ total C2 atendidos
+    const total   = contar(c2);
+    const mas30   = contar(c2.filter(x => x.mas30));
+    const hasta30 = contar(c2.filter(x => x.hasta30));
+    const cumplimiento = pct(hasta30, total);
 
     sub2.textContent = textoPeriodo();
     cumple2.textContent = cumplimiento;
@@ -323,13 +400,11 @@
   }
 
   // ======================= 4. REM A08 · SECCIÓN D =======================
-  const remCache = {};   // guarda los REM ya leídos por año
+  const remCache = {};
 
-  // Quita tildes, pasa a mayúsculas y junta espacios (para buscar textos sin errores)
   const norm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                                     .toUpperCase().replace(/\s+/g, ' ').trim();
 
-  // Busca un archivo SA_mm probando las extensiones
   async function leerLibroREM(anio, mes) {
     const nombre = 'SA_' + String(mes).padStart(2, '0');
     for (const ext of EXTENSIONES_REM) {
@@ -337,23 +412,20 @@
       const r = await fetch(ruta);
       if (r.ok) return XLSX.read(await r.arrayBuffer(), { type: 'array' });
     }
-    return null;   // no existe ese mes
+    return null;
   }
 
-  // Dentro de la hoja A08 busca la Sección D y saca los 4 valores de "Ambos sexos"
   function extraerSeccionD(libro) {
     const nombreHoja = libro.SheetNames.find(n => norm(n) === 'A08') || libro.SheetNames.find(n => norm(n).includes('A08'));
     if (!nombreHoja) throw 'no tiene hoja A08';
     const filas = XLSX.utils.sheet_to_json(libro.Sheets[nombreHoja], { header: 1, raw: true, defval: '' });
     const textoFila = f => norm(f.join(' '));
 
-    // Inicio y fin de la Sección D
     const iniD = filas.findIndex(f => /SECCION D\b/.test(textoFila(f)));
     if (iniD < 0) throw 'no se encontró la SECCIÓN D en A08';
     let finD = filas.findIndex((f, i) => i > iniD && /SECCION [E-Z]\b/.test(textoFila(f)));
     if (finD < 0) finD = filas.length;
 
-    // Filas de cada tramo
     const buscar = prueba => {
       for (let i = iniD; i < finD; i++) {
         const col = filas[i].findIndex(c => prueba(norm(c)));
@@ -369,7 +441,6 @@
     };
     for (const k in tramos) if (!tramos[k]) throw 'no se encontró la fila "' + k + '" en la Sección D';
 
-    // Columna "Ambos sexos": se busca en los encabezados de la Sección D
     let colAmbos = -1;
     for (let i = iniD; i < tramos.menos12.fila && colAmbos < 0; i++) {
       colAmbos = filas[i].findIndex(c => norm(c).includes('AMBOS SEXOS'));
@@ -378,7 +449,6 @@
     const valor = t => {
       const fila = filas[t.fila];
       if (colAmbos >= 0) return Number(fila[colAmbos]) || 0;
-      // Si no hay encabezado "Ambos sexos", toma el primer número a la derecha del texto
       for (let c = t.col + 1; c < fila.length; c++) if (fila[c] !== '' && !isNaN(fila[c])) return Number(fila[c]);
       return 0;
     };
@@ -388,7 +458,6 @@
     };
   }
 
-  // Lee los 12 meses de un año (una sola vez, luego queda guardado)
   function cargarREM(anio) {
     if (!remCache[anio]) {
       remCache[anio] = Promise.all([1,2,3,4,5,6,7,8,9,10,11,12].map(async mes => {
@@ -403,20 +472,19 @@
     return remCache[anio];
   }
 
-  // ---- GRÁFICO 3: Ingreso a cama hospitalaria según tiempo de demora ----
+  // ---- GRÁFICO 3 ----
   async function grafico3() {
     const anio = Number(filtroAnio.value);
     const mesSel = Number(filtroMes.value);
     sub3.textContent = textoPeriodo() + ' · leyendo REM…';
 
     const meses = await cargarREM(anio);
-    if (anio !== Number(filtroAnio.value) || mesSel !== Number(filtroMes.value)) return;  // cambió el filtro mientras leía
+    if (anio !== Number(filtroAnio.value) || mesSel !== Number(filtroMes.value)) return;
 
     const validos = meses.filter(m => !m.falta && !m.error && (mesSel === 0 || m.mes === mesSel));
     const sumar = k => validos.reduce((s, m) => s + m[k], 0);
     const menos12 = sumar('menos12'), de12a24 = sumar('de12a24'), mayor24 = sumar('mayor24'), permanecen = sumar('permanecen');
 
-    // FÓRMULA: numerador = Menos de 12 h ; denominador = Menos de 12 h + 12-24 h + Mayor a 24 h + Permanecen en UEH
     const numerador   = menos12;
     const denominador = menos12 + de12a24 + mayor24 + permanecen;
     const resultado   = pct(numerador, denominador);
@@ -445,7 +513,6 @@
       }
     });
 
-    // Tabla: un renglón por mes + total
     const filaHTML = (nombre, m, clase = '') => {
       const den = m.menos12 + m.de12a24 + m.mayor24 + m.permanecen;
       return `<tr class="${clase}"><td>${nombre}</td><td>${fmt(m.menos12)}</td><td>${fmt(m.de12a24)}</td>` +
@@ -456,7 +523,6 @@
       validos.map(m => filaHTML(NOMBRE_MES[m.mes], m)).join('') +
       filaHTML('Total', { menos12, de12a24, mayor24, permanecen }, 'total');
 
-    // Avisos de meses sin archivo o con problemas
     const problemas = meses.filter(m => (mesSel === 0 || m.mes === mesSel) && (m.falta || m.error));
     aviso3.textContent = problemas.length
       ? 'Sin datos: ' + problemas.map(m => NOMBRE_MES[m.mes] + (m.error ? ' (' + m.error + ')' : ' (no está el archivo SA_' + String(m.mes).padStart(2, '0') + ')')).join(' · ')
