@@ -141,8 +141,9 @@
       <span class="marca-red">Unidad de Estadística · Hospital San Luis de Buin-Paine</span>
       <h1>Estadística de Urgencia</h1>
     </div>
-    <!-- Botón volver: lleva a la sección con id="produccion" de la página de inicio -->
-    <a class="btn-volver" id="btnVolver" href="../index.html#produccion">&#8592; Volver inicio</a>
+    <!-- Botón volver: lleva a la sección id="Produccion" de la página de inicio.
+         OJO: el id distingue mayúsculas, debe escribirse igual que en index.html -->
+    <a class="btn-volver" id="btnVolver" href="index.html#Produccion">&#8592; Volver inicio</a>
   </div>
 </header>
 
@@ -224,6 +225,19 @@
 <footer class="pie">Unidad de Estadística · Hospital San Luis de Buin-Paine</footer>
 
 <script>
+/* ---------- botón "Volver inicio" ----------
+   Busca index.html en la misma carpeta de esta página; si no está, en la carpeta de arriba. */
+const SECCION_INICIO = "Produccion";   // id de la sección en index.html (con la misma mayúscula)
+(async () => {
+  const btn = document.getElementById("btnVolver");
+  for (const ruta of ["index.html", "../index.html"]) {
+    try {
+      const r = await fetch(ruta, { method: "HEAD", cache: "no-store" });
+      if (r.ok) { btn.href = ruta + "#" + SECCION_INICIO; return; }
+    } catch (e) { /* sigue con la siguiente ruta */ }
+  }
+})();
+
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 /* =====================================================================
