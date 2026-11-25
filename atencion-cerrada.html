@@ -18,17 +18,20 @@
       --soft: var(--gris-fondo);
       --s1: var(--azul);        /* serie principal */
       --ref: #8a9097;           /* referencia: total del establecimiento */
+
+      /* Medidas fluidas de esta página */
+      --alto-fig: clamp(260px, 46vh, 600px);   /* alto del gráfico de líneas */
     }
 
     /* ---------- Cabecera de la página (mismo degradado que la portada) ---------- */
     .cabecera-pagina {
       background: linear-gradient(135deg, var(--azul-marino) 0%, var(--azul) 100%);
       color: var(--blanco);
-      padding: 45px 0 50px;
+      padding: clamp(28px, 4vw, 56px) 0 clamp(30px, 4.5vw, 60px);
     }
     .etiqueta {
       display: inline-block;
-      font-size: 0.8rem;
+      font-size: clamp(0.72rem, 0.68rem + 0.2vw, 0.85rem);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       background: rgba(255, 255, 255, 0.15);
@@ -38,81 +41,85 @@
     }
     .cabecera-pagina h1 {
       color: var(--blanco);
-      font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+      font-size: clamp(1.4rem, 1rem + 2vw, 2.6rem);
       margin-bottom: 8px;
       text-wrap: balance;
     }
-    .sub { color: var(--mute); max-width: 70ch; }
+    .sub { color: var(--mute); max-width: 70ch; font-size: clamp(0.9rem, 0.85rem + 0.25vw, 1.1rem); }
     .cabecera-pagina .sub { color: #d6e4f3; }
 
     /* ---------- Tarjetas de indicadores clave ---------- */
     .kpis {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 15px;
-      margin-top: 28px;
+      grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+      gap: clamp(10px, 1.2vw, 18px);
+      margin-top: clamp(18px, 2.5vw, 32px);
     }
     .kpi {
       background: var(--blanco);
       border-radius: var(--radio);
       border-bottom: 3px solid var(--azul);
       box-shadow: var(--sombra);
-      padding: 16px 18px;
+      padding: clamp(12px, 1.3vw, 20px) clamp(14px, 1.5vw, 22px);
+      min-width: 0;
     }
     .kpi b {
       display: block;
       color: var(--azul-marino);
-      font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+      font-size: clamp(1.3rem, 1rem + 1.2vw, 2.1rem);
       line-height: 1.15;
-      white-space: nowrap;
+      overflow-wrap: anywhere;
     }
-    .kpi span { display: block; color: var(--texto-suave); font-size: 0.85rem; }
+    .kpi span { display: block; color: var(--texto-suave); font-size: clamp(0.78rem, 0.74rem + 0.2vw, 0.95rem); }
     .kpi.key { border-bottom-color: var(--rojo); }
     .kpi.key b { color: var(--azul); }
 
     /* ---------- Contenido ---------- */
-    .contenido { padding: 40px 0 20px; }
+    .contenido { padding: clamp(20px, 3vw, 48px) 0 clamp(10px, 1.5vw, 24px); }
     .tarjeta {
       background: var(--blanco);
       border-radius: 12px;
       box-shadow: var(--sombra);
-      padding: 24px;
-      margin-bottom: 28px;
+      padding: clamp(14px, 1.8vw, 30px);
+      margin-bottom: clamp(16px, 2vw, 32px);
+      min-width: 0;
     }
-    .tarjeta h2 { font-size: 1.35rem; }
+    .tarjeta h2 { font-size: clamp(1.1rem, 0.95rem + 0.6vw, 1.6rem); }
     .tarjeta .sub { margin-top: -8px; }
 
     /* Filtros */
     .ctrls { display: flex; flex-wrap: wrap; gap: 15px; margin: 4px 0 10px; }
     .ctrls label {
       font-size: 0.85rem; color: var(--texto-suave);
-      display: flex; flex-direction: column; gap: 4px; flex: 1 1 240px;
+      display: flex; flex-direction: column; gap: 4px; flex: 1 1 min(240px, 100%); min-width: 0;
     }
     select {
-      font: inherit; font-size: 1rem; min-height: 44px; padding: 8px 12px;
+      font: inherit; font-size: 1rem; min-height: 44px; padding: 8px 12px; width: 100%; max-width: 100%;
       border: 1px solid var(--borde); border-radius: var(--radio);
       background: var(--blanco); color: var(--texto);
     }
     select:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
 
     /* Gráfico de líneas */
-    .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--mute); margin: 6px 0; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: clamp(0.78rem, 0.74rem + 0.2vw, 0.95rem); color: var(--mute); margin: 6px 0; }
     .legend i { display: inline-block; width: 18px; height: 2px; vertical-align: middle; margin-right: 6px; }
-    .fig { position: relative; min-height: 340px; }
-    .fig > svg { position: absolute; inset: 0; width: 100%; height: 100%; font-family: "Roboto", Arial, sans-serif; }
+    .fig { position: relative; height: var(--alto-fig); }
+    /* touch-action: permite deslizar la página con el dedo y a la vez ver el detalle al tocar */
+    .fig > svg { position: absolute; inset: 0; width: 100%; height: 100%; font-family: "Roboto", Arial, sans-serif; touch-action: pan-y; }
     .tip {
       position: absolute; pointer-events: none; background: var(--azul-marino); color: var(--blanco);
-      font-size: 0.8rem; padding: 8px 10px; border-radius: 6px; opacity: 0;
-      transition: opacity .1s; white-space: nowrap; z-index: 2;
+      font-size: clamp(0.75rem, 0.72rem + 0.15vw, 0.9rem); padding: 8px 10px; border-radius: 6px; opacity: 0;
+      transition: opacity .1s; z-index: 2; max-width: min(320px, 85%); overflow-wrap: anywhere;
     }
-    .note { font-size: 0.85rem; color: var(--mute); margin-top: 8px; }
+    .note { font-size: clamp(0.78rem, 0.74rem + 0.2vw, 0.95rem); color: var(--mute); margin-top: 8px; }
 
     /* Barras de comparación entre áreas */
     .bars { display: grid; gap: 8px; margin-top: 16px; }
     .bar {
       display: grid; grid-template-columns: minmax(0, 15em) minmax(0, 1fr) 5.5em;
-      gap: 10px; align-items: center; font-size: 0.9rem;
+      gap: 10px; align-items: center; font-size: clamp(0.8rem, 0.76rem + 0.2vw, 1rem);
     }
+    .bar .n { min-width: 0; overflow-wrap: anywhere; }
     .bar .t { height: 18px; background: var(--soft); border-radius: 0 4px 4px 0; }
     .bar .f { height: 100%; background: var(--s1); border-radius: 0 4px 4px 0; }
     .bar.tot { font-weight: 500; }
@@ -120,22 +127,31 @@
     .bar .v { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
     /* Tabla mensual */
-    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
-    th, td { padding: 6px 8px; border-bottom: 1px solid var(--borde); text-align: right; white-space: nowrap; }
+    table { border-collapse: collapse; width: 100%; font-size: clamp(0.75rem, 0.72rem + 0.2vw, 0.95rem); font-variant-numeric: tabular-nums; }
+    th, td { padding: clamp(5px, 0.6vw, 10px) clamp(6px, 0.7vw, 12px); border-bottom: 1px solid var(--borde); text-align: right; white-space: nowrap; }
     th:first-child, td:first-child { text-align: left; }
     th { color: var(--texto-suave); font-weight: 500; background: var(--azul-claro); }
-    .scroll { overflow-x: auto; margin-top: 8px; }
+    .scroll { overflow-x: auto; margin-top: 8px; -webkit-overflow-scrolling: touch; }
+    /* La primera columna (área) queda fija al deslizar la tabla en celular */
+    th:first-child, td:first-child { position: sticky; left: 0; background: var(--blanco); z-index: 1; }
+    th:first-child { background: var(--azul-claro); }
     details { margin-top: 24px; }
     summary {
       cursor: pointer; min-height: 44px; display: flex; align-items: center;
       font-weight: 500; color: var(--azul);
     }
-    summary:hover { color: var(--azul-oscuro); }
+    @media (hover: hover) { summary:hover { color: var(--azul-oscuro); } }
 
+    /* Celular */
     @media (max-width: 600px) {
       .bar { grid-template-columns: minmax(0, 1fr) 5em; }
       .bar .n { grid-column: 1 / -1; }
-      .tarjeta { padding: 18px; }
+      th:first-child, td:first-child { max-width: 9em; white-space: normal; }
+    }
+
+    /* Celular acostado o pantallas muy bajas */
+    @media (max-height: 500px) {
+      :root { --alto-fig: 260px; }
     }
   </style>
 </head>
@@ -273,7 +289,7 @@ $('kpis').innerHTML=[
  ['key',fmt(T['Indice Ocupacional'].acum,'Indice Ocupacional'),'Índice ocupacional acumulado'],
  ['',fmt(T['Numero de Egresos'].acum,'Numero de Egresos'),'Egresos acumulados'],
  ['',fmt(T['Promedio Días de Estada'].acum,'Promedio Días de Estada'),'Promedio días de estada'],
- ['',fmt(T['Letalidad'].acum,'Letalidad'),'Letalidad ('+T['Egresos Fallecidos'].acum+' fallecidos)'],
+ ['',fmt(T['Letalidad'].acum,'Letalidad'),'Letalidad ('+fmt(T['Egresos Fallecidos'].acum,'Egresos Fallecidos')+' fallecidos)'],
  ['',fmt(T['Promedio Cama Disponibles'].acum,'Promedio Cama Disponibles'),'Promedio camas disponibles']
 ].map(k=>`<div class="kpi ${k[0]}"><b>${esc(k[1])}</b><span>${esc(k[2])}</span></div>`).join('');
 
@@ -281,7 +297,9 @@ const svg=$('svg'),tip=$('tip'),fig=$('fig');
 let series=[];
 function draw(){
  const W=svg.clientWidth,H=svg.clientHeight;if(!W)return;
- const small=W<520,m={l:small?40:56,r:16,t:16,b:32},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ const small=W<520,fs=W<420?10:W<800?11:W<1400?12:14;      // tamaño de letra según ancho
+ const m={l:small?40:fs*4.6,r:small?8:16,t:16,b:fs*2.6},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ const rp=W<420?2.5:W<1400?3.5:4.5;                          // radio de los puntos
  const ind=$('ind').value;
  const vals=series.flatMap(s=>s.v).filter(v=>v!=null);
  let max=Math.max(...vals,0);const pct=UNIT[ind]==='%';
@@ -289,21 +307,27 @@ function draw(){
  const step=niceStep(max/4);max=Math.ceil(max/step)*step||1;
  const x=i=>m.l+iw*(i+.5)/12,y=v=>m.t+ih*(1-v/max);
  let g='';
- for(let v=0;v<=max+1e-9;v+=step)g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--mute)">${esc(+v.toFixed(2))}${pct?'%':''}</text>`;
- MES.forEach((mm,i)=>{if(!small||i%2===0)g+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="12" fill="${i>ult?'var(--line)':'var(--mute)'}">${mm}</text>`});
+ for(let v=0;v<=max+1e-9;v+=step)g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end" font-size="${fs}" fill="var(--mute)">${esc(+v.toFixed(2))}${pct?'%':''}</text>`;
+ MES.forEach((mm,i)=>{if(!small||i%2===0)g+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="${fs}" fill="${i>ult?'var(--line)':'var(--mute)'}">${mm}</text>`});
  series.forEach(s=>{
   // segmentos: un null corta la línea (no se dibuja como 0)
   let d='',pen=false;s.v.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i)+','+y(v);pen=true});
-  g+=`<path d="${d}" fill="none" stroke="${s.c}" stroke-width="2" ${s.dash?'stroke-dasharray="5 4"':''}/>`;
-  s.v.forEach((v,i)=>{if(v!=null)g+=`<circle cx="${x(i)}" cy="${y(v)}" r="${s.dash?3:4}" fill="${s.c}" stroke="var(--bg)" stroke-width="2"/>`});
+  g+=`<path d="${d}" fill="none" stroke="${s.c}" stroke-width="${W<420?1.6:2}" ${s.dash?'stroke-dasharray="5 4"':''}/>`;
+  s.v.forEach((v,i)=>{if(v!=null)g+=`<circle cx="${x(i)}" cy="${y(v)}" r="${s.dash?rp-1:rp}" fill="${s.c}" stroke="var(--bg)" stroke-width="2"/>`});
  });
  g+=`<line id="xh" y1="${m.t}" y2="${m.t+ih}" stroke="var(--mute)" opacity="0"/>`;
  svg.innerHTML=g;
- svg.onpointermove=e=>{const r=svg.getBoundingClientRect();const i=Math.max(0,Math.min(11,Math.floor((e.clientX-r.left-m.l)/iw*12)));
+ const mostrar=e=>{const r=svg.getBoundingClientRect();const i=Math.max(0,Math.min(11,Math.floor((e.clientX-r.left-m.l)/iw*12)));
   const xh=svg.querySelector('#xh');if(series.every(s=>s.v[i]==null)){tip.style.opacity=0;xh.setAttribute('opacity',0);return}
   xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.setAttribute('opacity',.5);
   tip.innerHTML=`<b>${MES[i]} 2026</b>`+series.map(s=>`<br>${esc(s.n)}: ${esc(fmt(s.v[i],ind))}`).join('');
-  tip.style.opacity=1;const tx=x(i)+12,tw=tip.offsetWidth;tip.style.left=(tx+tw>W?x(i)-tw-12:tx)+'px';tip.style.top=m.t+'px'};
+  tip.style.opacity=1;
+  // el recuadro nunca se sale del gráfico (ni por la derecha ni por la izquierda)
+  const tw=tip.offsetWidth,tx=x(i)+12;
+  let left=tx+tw>W?x(i)-tw-12:tx; left=Math.max(4,Math.min(left,W-tw-4));
+  tip.style.left=left+'px';tip.style.top=m.t+'px'};
+ svg.onpointermove=mostrar;
+ svg.onpointerdown=mostrar;   // en celular: tocar un mes muestra su detalle
  svg.onpointerleave=()=>{tip.style.opacity=0;const xh=svg.querySelector('#xh');if(xh)xh.setAttribute('opacity',0)};
 }
 function niceStep(r){const p=10**Math.floor(Math.log10(r||1)),n=r/p;return (n<=1?1:n<=2?2:n<=5?5:10)*p}
