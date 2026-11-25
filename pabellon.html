@@ -112,6 +112,13 @@
        al agregar el segundo, quedan uno al lado del otro */
     .dos-columnas:has(> .tarjeta:only-child) { grid-template-columns: 1fr; }
     .kpi.prog { border-color: var(--azul); }
+
+    /* Tabla de intervenciones (tipo, procedencia, estado) */
+    .tabla-interv td, .tabla-interv th { text-align: left; }
+    .tabla-interv td:last-child, .tabla-interv th:last-child { text-align: right; }
+    .tabla-interv td:last-child { font-weight: 700; color: var(--azul-marino); }
+    .tabla-interv tbody tr.inicio-tipo td { border-top: 2px solid var(--azul); }
+    .tabla-interv tbody tr:first-child td { border-top: 0; }
     .kpi.susp { border-color: var(--rojo); }
     @media (max-width: 1000px) {
       .dos-columnas { grid-template-columns: 1fr; }
@@ -243,7 +250,16 @@
           </div>
           <div class="chart-box medio"><canvas id="graficoSusp"></canvas></div>
         </article>
-        <!-- columna derecha: al agregar aquí otro <article class="tarjeta">, ambos quedan lado a lado -->
+        <!-- INTERVENCIONES POR TIPO, PROCEDENCIA Y ESTADO (base l.pabellon) — columna derecha -->
+        <article class="tarjeta">
+          <h2>Intervenciones quirúrgicas</h2>
+          <div class="kpis">
+            <div class="kpi hab"><span>Cirugías mayores</span><b id="tCmay">–</b></div>
+            <div class="kpi ocu"><span>Cirugías menores</span><b id="tCmen">–</b></div>
+            <div class="kpi susp"><span>Procedimientos</span><b id="tProc">–</b></div>
+          </div>
+          <div class="scroll"><table id="tablaInterv" class="tabla-interv"></table></div>
+        </article>
       </div>
 
     </div>
@@ -290,6 +306,15 @@ const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto"
 const COLOR = { hab: "#0a132d", ocu: "#0f69b4", rojo: "#eb3c46" };
 
 let datos = [];   // { anio, mes, electiva:{hab,ocu}, urgencia:{hab,ocu}, suspension:{prog,susp} }
+
+/* Base de intervenciones: PAGINA ESTADÍSTICA/bdpabellon/l.pabellon.xlsx */
+const RUTAS_BASE = ["bdpabellon/l.pabellon.xlsx", "bdpabellon/l_pabellon.xlsx"];
+const COL_FECHA = "FECING", COL_TIPO = "TIPO COD 1", COL_PROC = "PROCED", COL_ESTADO = "PLANILLA EGRESO HOSP";
+const COMBINACIONES = [];
+for (const tipo of ["CMAY", "CMEN", "PROC"])
+  for (const proc of ["ELECTIVA", "URGENCIA"])
+    for (const estado of ["HOSPITALIZADO", "AMBULATORIO"]) COMBINACIONES.push({ tipo, proc, estado });
+let base = null;  // { anio, mes, tipo, proc, estado }
 
 /* ---------- utilidades ---------- */
 const norm = v => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
@@ -374,6 +399,37 @@ async function buscarCarpeta(anios) {
   return { ruta: null, probadas };
 }
 
+/* ---------- lectura de la base l.pabellon.xlsx ---------- */
+function anioMes(v) {
+  if (typeof v === "number") { const d = XLSX.SSF.parse_date_code(v); return d ? { anio: d.y, mes: d.m } : null; }
+  const t = String(v).trim();
+  let m = t.match(/^(\d{4})[-\/](\d{1,2})/);              // 2026-01-31
+  if (m) return { anio: +m[1], mes: +m[2] };
+  m = t.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);  // 31-01-2026
+  if (m) return { anio: +m[3], mes: +m[2] };
+  return null;
+}
+async function cargarBase() {
+  for (const pre of PREFIJOS) for (const ruta of RUTAS_BASE) {
+    try {
+      const r = await fetch(encodeURI(pre + ruta) + "?v=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) continue;
+      const wb = XLSX.read(await r.arrayBuffer(), { type: "array", cellDates: false });
+      const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: true });
+      if (!filas.length) continue;
+      const claves = Object.keys(filas[0]);
+      const col = texto => claves.find(k => norm(k).startsWith(texto));
+      const cF = col(COL_FECHA), cT = col(COL_TIPO), cP = col(COL_PROC), cE = col(COL_ESTADO);
+      if (!cF || !cT || !cP || !cE) continue;
+      return filas.map(f => {
+        const am = anioMes(f[cF]);
+        return am && { ...am, tipo: norm(f[cT]), proc: norm(f[cP]), estado: norm(f[cE]) };
+      }).filter(Boolean);
+    } catch (e) {}
+  }
+  return null;
+}
+
 async function cargar() {
   const aviso = $("aviso");
   const hoy = new Date().getFullYear();
@@ -388,14 +444,14 @@ async function cargar() {
   }
 
   aviso.textContent = "Buscando los archivos REM…";
+  const promesaBase = cargarBase();                      // la base se lee al mismo tiempo que los REM
+  const errores = [];
   const anios = []; for (let a = hoy; a >= ANIO_DESDE; a--) anios.push(a);
   const { ruta, probadas } = await buscarCarpeta(anios);
   if (!ruta) {
-    aviso.classList.add("error");
-    aviso.innerHTML = "No se encontraron los archivos SA_01 … SA_12. Rutas probadas (relativas a esta página):" +
-      "<br><small>" + probadas.join("<br>") + "</small>";
-    return;
-  }
+    errores.push("No se encontraron los archivos SA_01 … SA_12. Rutas probadas (relativas a esta página):" +
+      "<br><small>" + probadas.join("<br>") + "</small>");
+  } else {
   RUTA_REM = ruta;
   aviso.textContent = "Cargando REM A21…";
   const tareas = [];
@@ -415,29 +471,32 @@ async function cargar() {
     })());
   }
   datos = (await Promise.all(tareas)).filter(Boolean);
-
-  if (!datos.length) {
-    aviso.classList.add("error");
-    aviso.innerHTML = `Se encontraron archivos en <b>${RUTA_REM("&lt;año&gt;", "xx")}</b>, pero ninguno trae la hoja ` +
-      `<b>${HOJA}</b> con la Sección A. Revisa que sean los REM SA correctos.`;
-    return;
+  if (!datos.length)
+    errores.push(`Se encontraron archivos en <b>${RUTA_REM("&lt;año&gt;", "xx")}</b>, pero ninguno trae la hoja ` +
+      `<b>${HOJA}</b> con la Sección A. Revisa que sean los REM SA correctos.`);
   }
-  aviso.hidden = true;
-  console.log("REM leídos desde:", RUTA_REM("<año>", "xx"));
+
+  base = await promesaBase;
+  if (!base) errores.push("No se encontró la base <b>bdpabellon/l.pabellon.xlsx</b> (o le faltan las columnas " +
+    "FECING, TIPO COD 1, PROCED o PLANILLA EGRESO HOSP).");
+
+  if (errores.length) { aviso.classList.add("error"); aviso.innerHTML = errores.join("<br><br>"); }
+  else aviso.hidden = true;
+  if (!datos.length && !(base && base.length)) return;
   llenarFiltros();
   actualizar();
 }
 
 /* ---------- filtros ---------- */
 function llenarFiltros() {
-  const anios = [...new Set(datos.map(d => d.anio))].sort((a, b) => b - a);
+  const anios = [...new Set([...datos, ...(base || [])].map(d => d.anio))].sort((a, b) => b - a);
   $("fAnio").innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join("");
   $("fAnio").value = anios[0];
   llenarMeses();
 }
 function llenarMeses() {
   const previo = $("fMes").value;
-  const meses = datos.filter(d => d.anio == $("fAnio").value).map(d => d.mes).sort((a, b) => a - b);
+  const meses = [...new Set([...datos, ...(base || [])].filter(d => d.anio == $("fAnio").value).map(d => d.mes))].sort((a, b) => a - b);
   $("fMes").innerHTML = '<option value="">Todos (acumulado)</option>' +
     meses.map(m => `<option value="${m}">${MESES[m - 1]}</option>`).join("");
   if (meses.includes(Number(previo))) $("fMes").value = previo;
@@ -571,6 +630,27 @@ function actualizar() {
      </thead>
      <tbody>${meses.map(d => fila(d, MESES[d.mes - 1])).join("")}</tbody>
      <tfoot>${fila(tot, "<b>Total " + anio + "</b>")}</tfoot>`;
+
+  /* tabla de intervenciones: cantidad por tipo, procedencia y estado */
+  const selBase = (base || []).filter(d => d.anio == anio && (!mes || d.mes == mes));
+
+  /* tarjetones: total de cada tipo */
+  const totalTipo = tipo => selBase.filter(d => d.tipo === tipo).length;
+  $("tCmay").textContent = num(totalTipo("CMAY"));
+  $("tCmen").textContent = num(totalTipo("CMEN"));
+  $("tProc").textContent = num(totalTipo("PROC"));
+
+  let totalInterv = 0;
+  const filasInterv = COMBINACIONES.map((c, i) => {
+    const n = selBase.filter(d => d.tipo === c.tipo && d.proc === c.proc && d.estado === c.estado).length;
+    totalInterv += n;
+    const inicio = i > 0 && COMBINACIONES[i - 1].tipo !== c.tipo ? ' class="inicio-tipo"' : "";
+    return `<tr${inicio}><td>${c.tipo}</td><td>${c.proc}</td><td>${c.estado}</td><td>${num(n)}</td></tr>`;
+  }).join("");
+  $("tablaInterv").innerHTML =
+    `<thead><tr><th>Tipo</th><th>Procedencia</th><th>Estado</th><th>Cantidad</th></tr></thead>
+     <tbody>${filasInterv}</tbody>
+     <tfoot><tr><td colspan="3">Total</td><td>${num(totalInterv)}</td></tr></tfoot>`;
 }
 
 cargar();
