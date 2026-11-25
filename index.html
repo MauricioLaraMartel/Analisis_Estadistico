@@ -9,18 +9,21 @@
 
   <!-- Estos estilos van después de estilos.css para que tengan prioridad -->
   <style>
-    /* Portada: "Unidad de Estadística" y "Estadísticas hospitalarias" centrados */
+    /* Todo lo que tenga el atributo "hidden" queda oculto de verdad
+       (sin esto, el display:flex de .portada le gana y la sección se sigue viendo) */
+    [hidden] { display: none !important; }
+
+    /* Portada: títulos y botones centrados.
+       El alto y el ancho fluidos vienen de estilos.css (se adaptan a cualquier pantalla). */
     .portada {
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 50vh;          /* usa 100vh si quieres pantalla completa */
       text-align: center;
     }
 
     .portada .contenedor {
       width: 100%;
-      max-width: 900px;
       margin: 0 auto;
       text-align: center;
     }
@@ -32,11 +35,36 @@
       text-align: center;
     }
 
-    /* Texto de "Nosotros" justificado */
-    #nosotros p {
-      text-align: justify;
-      hyphens: auto;             /* corta palabras largas para evitar espacios grandes */
-      -webkit-hyphens: auto;
+    /* Al usar los enlaces del menú (#Produccion, #nosotros, #contacto)
+       la sección no queda tapada por el encabezado fijo */
+    section[id] { scroll-margin-top: 110px; }
+
+    /* Texto de "Nosotros": justificado en pantallas anchas;
+       en celular queda alineado a la izquierda (lo define estilos.css) */
+    @media (min-width: 701px) {
+      #nosotros p {
+        text-align: justify;
+        hyphens: auto;           /* corta palabras largas para evitar espacios grandes */
+        -webkit-hyphens: auto;
+      }
+    }
+
+    /* Contacto: correo y teléfono se pueden tocar en el celular */
+    #contacto a {
+      color: var(--azul);
+      text-decoration: none;
+      overflow-wrap: anywhere;   /* el correo largo no se sale de la pantalla */
+    }
+    @media (hover: hover) {
+      #contacto a:hover { text-decoration: underline; }
+    }
+
+    /* Celular: el encabezado es más alto (menú en 2 filas) */
+    @media (max-width: 700px) {
+      section[id] { scroll-margin-top: 200px; }
+    }
+    @media (max-width: 380px) {
+      section[id] { scroll-margin-top: 0; }   /* ahí el encabezado ya no es fijo */
     }
   </style>
 </head>
@@ -60,12 +88,11 @@
         <a href="manuales.html">Manuales</a>
         <a href="#nosotros">Nosotros</a>
         <a href="#contacto">Contacto</a>
-      
       </nav>
     </div>
   </header>
 
-  <section class="portada"id="Produccion">
+  <section class="portada" id="Produccion">
   <div class="contenedor">
     <h1>Producción</h1>
     <div class="botones">
@@ -79,7 +106,7 @@
   </div>
 </section>
 
-<section class="portada" id="indicadores">
+<section class="portada" id="indicadores" hidden>
   <div class="contenedor">
     <h1>Indicadores</h1>
     <div class="botones">
@@ -87,7 +114,6 @@
       <a href="meta18834.html" class="boton">Meta 18.834</a>
       <a href="meta19664.html" class="boton">Meta 19.664</a>
       <a href="meta20707.html" class="boton">Meta 20.707</a>
-      
     </div>
   </div>
 </section>
@@ -102,9 +128,9 @@
   <section id="contacto" class="fondo-gris">
     <div class="contenedor">
       <h2>Contacto</h2>
-      <p>Correo: Mauricio.laram@redsalud.gob.cl</p>
+      <p>Correo: <a href="mailto:Mauricio.laram@redsalud.gob.cl">Mauricio.laram@redsalud.gob.cl</a></p>
       <p>Anexo: 264881</p>
-      <p>Teléfono: 2-2 5767881</p>
+      <p>Teléfono: <a href="tel:+56225767881">2-2 5767881</a></p>
     </div>
   </section>
 
