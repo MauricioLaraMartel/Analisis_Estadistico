@@ -9,42 +9,79 @@
 
   <!-- Solo los estilos propios de esta página; el resto viene de estilos.css -->
   <style>
+    /* Portada más baja en esta página: solo tiene un título y un botón */
+    .portada {
+      min-height: clamp(180px, 32vh, 420px);
+    }
+
     .lista-manuales {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+      gap: clamp(12px, 1.5vw, 24px);
     }
 
     .manual {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: clamp(10px, 1.2vw, 18px);
       background-color: var(--blanco, #ffffff);
-      padding: 20px 22px;
+      padding: clamp(14px, 1.6vw, 24px) clamp(14px, 1.8vw, 26px);
       border-radius: var(--radio, 8px);
       border-bottom: 3px solid var(--rojo, #eb3c46);
       box-shadow: var(--sombra, 0 4px 14px rgba(10, 19, 45, 0.08));
       text-decoration: none;
+      min-width: 0;
       transition: transform 0.2s, background-color 0.2s;
     }
 
-    .manual:hover {
-      background-color: var(--azul-claro, #e8f1fa);
-      transform: translateY(-3px);
+    /* El efecto al pasar el mouse solo en equipos con mouse (en celular no queda "pegado") */
+    @media (hover: hover) {
+      .manual:hover {
+        background-color: var(--azul-claro, #e8f1fa);
+        transform: translateY(-3px);
+      }
+    }
+
+    /* Al navegar con teclado se ve qué manual está seleccionado */
+    .manual:focus-visible {
+      outline: 3px solid var(--azul, #0f69b4);
+      outline-offset: 3px;
     }
 
     .manual-icono {
-      font-size: 2rem;
+      font-size: clamp(1.6rem, 1.2rem + 1vw, 2.4rem);
+      flex-shrink: 0;
+    }
+
+    .manual-texto {
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .manual-texto strong {
       display: block;
       color: var(--azul-marino, #0a132d);
       font-weight: 500;
+      font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.15rem);
     }
 
     .manual-texto small {
       color: var(--texto-suave, #5f6b7a);
+      font-size: clamp(0.8rem, 0.75rem + 0.2vw, 0.95rem);
+    }
+
+    /* Pantallas muy grandes: tarjetas más anchas para que no se vean diminutas */
+    @media (min-width: 1800px) {
+      .lista-manuales {
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      }
+    }
+
+    /* Celular: tarjetas un poco más altas para tocarlas fácil con el dedo */
+    @media (max-width: 700px) {
+      .manual {
+        min-height: 64px;
+      }
     }
   </style>
 </head>
