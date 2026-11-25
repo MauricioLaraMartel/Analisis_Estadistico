@@ -9,6 +9,10 @@
 
   <!-- Estos estilos van después de estilos.css para que tengan prioridad -->
   <style>
+    /* Todo lo que tenga el atributo "hidden" queda oculto de verdad
+       (sin esto, el display:flex de .portada le gana y la sección se sigue viendo) */
+    [hidden] { display: none !important; }
+
     /* Portada: títulos y botones centrados.
        El alto y el ancho fluidos vienen de estilos.css (se adaptan a cualquier pantalla). */
     .portada {
@@ -102,7 +106,7 @@
   </div>
 </section>
 
-<section class="portada" id="indicadores">
+<section class="portada" id="indicadores" hidden>
   <div class="contenedor">
     <h1>Indicadores</h1>
     <div class="botones">
@@ -110,7 +114,6 @@
       <a href="meta18834.html" class="boton">Meta 18.834</a>
       <a href="meta19664.html" class="boton">Meta 19.664</a>
       <a href="meta20707.html" class="boton">Meta 20.707</a>
-      
     </div>
   </div>
 </section>
