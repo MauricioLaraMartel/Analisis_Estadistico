@@ -3,73 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ambulatorio Médica | Unidad de Estadística</title>
+  <title>Consultas de Especialidad | Hospital San Luis de Buin-Paine</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+  <!-- Estilos propios de esta página (van después de estilos.css) -->
   <style>
-    .construccion {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 70vh;
-      text-align: center;
-      padding: 40px 20px;
-      background-color: #f4f6f9;
+    [hidden] { display: none !important; }
+
+    /* Alto de los gráficos según la pantalla */
+    :root {
+      --alto-grafico: clamp(260px, calc(100vh - 380px), 560px);
     }
 
-    .construccion-caja {
-      background-color: #ffffff;
-      max-width: 600px;
-      width: 100%;
-      padding: 50px 40px;
-      border-radius: 10px;
-      border-top: 6px solid #0f69b4;
-      box-shadow: 0 4px 14px rgba(10, 19, 45, 0.08);
+    /* ---------- Cabecera ---------- */
+    .cabecera-pagina {
+      background: linear-gradient(135deg, var(--azul-marino) 0%, var(--azul) 100%);
+      color: var(--blanco);
+      padding: clamp(28px, 4vw, 56px) 0 clamp(30px, 4.5vw, 60px);
+    }
+    .cabecera-pagina h1 {
+      color: var(--blanco);
+      font-size: clamp(1.4rem, 1rem + 2vw, 2.6rem);
+      text-wrap: balance;
     }
 
-    .construccion-icono {
-      font-size: 4rem;
-      margin-bottom: 15px;
+    /* ---------- Contenido ---------- */
+    .contenido { padding: clamp(20px, 3vw, 48px) 0 clamp(10px, 1.5vw, 24px); }
+    .tarjeta {
+      background: var(--blanco);
+      border-radius: 12px;
+      box-shadow: var(--sombra);
+      padding: clamp(14px, 1.8vw, 30px);
+      margin-bottom: clamp(16px, 2vw, 32px);
+      min-width: 0;
     }
+    .tarjeta h2 { font-size: clamp(1.1rem, 0.95rem + 0.6vw, 1.6rem); text-wrap: balance; }
 
-    .construccion h1 {
-      color: #0a132d;
-      font-size: 2rem;
-      margin-bottom: 10px;
+    /* Filtros */
+    .filtros { display: flex; flex-wrap: wrap; gap: clamp(10px, 1.4vw, 20px); align-items: flex-end; }
+    .filtros label {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: 0.8rem; font-weight: 500; color: var(--texto-suave);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      flex: 1 1 min(200px, 100%); min-width: 0;
     }
-
-    .construccion h2 {
-      color: #0f69b4;
-      font-size: 1.3rem;
-      font-weight: 500;
-      margin-bottom: 20px;
-      padding-bottom: 0;
+    select {
+      font: inherit; font-size: 1rem; text-transform: none; letter-spacing: 0;
+      min-height: 44px; padding: 8px 12px; width: 100%;
+      border: 1px solid var(--borde); border-radius: var(--radio);
+      background: var(--blanco); color: var(--azul-marino);
     }
+    select:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
 
-    .construccion h2::after {
-      display: none;
+    /* Indicadores */
+    .kpis {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
+      gap: clamp(8px, 1vw, 14px); width: 100%; margin-bottom: clamp(14px, 1.6vw, 22px);
     }
-
-    .construccion p {
-      color: #5f6b7a;
-      font-size: 1.1rem;
-      margin-bottom: 30px;
+    .kpi {
+      border-left: 5px solid var(--azul);
+      background: var(--azul-claro);
+      border-radius: var(--radio);
+      padding: clamp(10px, 1vw, 16px) clamp(10px, 1.1vw, 16px);
+      min-width: 0;
     }
-
-    .boton-volver {
-      display: inline-block;
-      padding: 12px 28px;
-      background-color: #0f69b4;
-      color: #ffffff;
-      text-decoration: none;
-      font-weight: 500;
-      border-radius: 8px;
-      transition: background-color 0.2s;
+    .kpi span {
+      display: block; font-size: clamp(0.68rem, 0.64rem + 0.18vw, 0.82rem); color: var(--texto-suave);
+      text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500;
     }
+    .kpi b {
+      display: block; color: var(--azul-marino);
+      font-size: clamp(1.15rem, 0.9rem + 1vw, 1.9rem); line-height: 1.2;
+      overflow-wrap: anywhere; font-variant-numeric: tabular-nums;
+    }
+    .kpi.marino { border-color: var(--azul-marino); }
+    .kpi.rojo   { border-color: var(--rojo); }
+    .kpi.pct { background: var(--azul-marino); border-color: var(--rojo); }
+    .kpi.pct span { color: #c9d3e0; }
+    .kpi.pct b { color: var(--blanco); }
 
-    .boton-volver:hover {
-      background-color: #0a4f8a;
+    /* Gráficos */
+    .chart-box { position: relative; width: 100%; height: var(--alto-grafico); }
+    /* el alto de estos gráficos lo calcula la página según la cantidad de especialidades */
+    .chart-box.por-especialidad { height: 480px; }
+
+    /* Tabla mensual */
+    details { margin-top: clamp(16px, 2vw, 24px); }
+    summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 500; color: var(--azul); }
+    @media (hover: hover) { summary:hover { color: var(--azul-oscuro); } }
+    .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; }
+    table { border-collapse: collapse; width: 100%; font-size: clamp(0.75rem, 0.72rem + 0.2vw, 0.95rem); font-variant-numeric: tabular-nums; }
+    th, td { padding: clamp(5px, 0.6vw, 10px) clamp(6px, 0.7vw, 12px); border-bottom: 1px solid var(--borde); text-align: right; white-space: nowrap; }
+    th {
+      background: var(--azul-marino); color: var(--blanco); font-weight: 500;
+      font-size: clamp(0.68rem, 0.64rem + 0.15vw, 0.8rem); text-transform: uppercase; letter-spacing: 0.4px;
+      white-space: normal; line-height: 1.25; vertical-align: bottom;
+    }
+    th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--blanco); z-index: 1; }
+    th:first-child { background: var(--azul-marino); }
+    tbody tr:nth-child(even) td { background: var(--gris-fondo); }
+    td.col-total { font-weight: 700; color: var(--azul-marino); }
+    /* Tablas por especialidad: más compactas y el nombre puede ir en dos líneas,
+       así caben completas en la pantalla sin desplazarse hacia el lado */
+    .tabla-esp { font-size: clamp(0.72rem, 0.68rem + 0.22vw, 0.92rem); }
+    .tabla-esp th, .tabla-esp td { padding: clamp(4px, 0.5vw, 8px) clamp(5px, 0.6vw, 10px); }
+    .tabla-esp td:first-child { white-space: normal; min-width: 8.5em; line-height: 1.25; }
+    .tabla-esp .corto { display: none; }
+    @media (max-width: 480px) {
+      .tabla-esp .largo { display: none; }
+      .tabla-esp .corto { display: inline; }
+      .tabla-esp { font-size: 0.7rem; }
+      .tabla-esp th, .tabla-esp td { padding: 4px 4px; }
+      .tabla-esp th { letter-spacing: 0; }
+      .tabla-esp td:first-child { min-width: 6.5em; }
+    }
+    tfoot td { font-weight: 700; background: var(--azul-claro); color: var(--azul-marino); border-top: 2px solid var(--azul); }
+
+    #aviso {
+      padding: 14px 18px; border-radius: var(--radio); background: var(--azul-claro); color: var(--azul);
+      border-left: 5px solid var(--azul); font-weight: 500; margin-bottom: clamp(16px, 2vw, 24px);
+      overflow-wrap: anywhere;
+    }
+    #aviso.error { background: #fdecec; color: #b3242c; border-left-color: var(--rojo); }
+
+    /* Celular */
+    @media (max-width: 480px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .kpi.pct { grid-column: 1 / -1; }
+      :root {
+        --alto-grafico: clamp(260px, 55vh, 420px);
+      }
+    }
+    /* Celular acostado o pantallas muy bajas */
+    @media (max-height: 500px) and (min-width: 481px) {
+      :root { --alto-grafico: 280px; }
     }
   </style>
 </head>
@@ -80,15 +151,531 @@
     <span class="rojo"></span>
   </div>
 
-  <section class="construccion">
-    <div class="construccion-caja">
-      <div class="construccion-icono">🚧</div>
-      <h1>Ambulatorio Médica</h1>
-      <h2>Página en construcción</h2>
-      <p>Estamos trabajando en esta sección. Pronto estará disponible la información.</p>
-      <a href="index.html" class="boton-volver">← Volver al inicio</a>
+  <header class="encabezado">
+    <div class="contenedor encabezado-fila">
+      <a href="index.html" class="marca">
+        <div class="marca-texto">
+          <span class="marca-red">Servicio de Salud Metropolitano Sur</span>
+          <strong>Hospital San Luis de Buin-Paine</strong>
+          <span class="marca-unidad">Unidad de Estadística</span>
+        </div>
+      </a>
+      <nav class="menu">
+        <a href="index.html#Produccion" id="btnVolver">⟵ Inicio</a>
+        <a href="manuales.html">Manuales</a>
+        <a href="index.html#contacto">Contacto</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="cabecera-pagina">
+    <div class="contenedor">
+      <h1>Producción · Consultas de Especialidad</h1>
     </div>
   </section>
 
+  <main class="contenido fondo-gris">
+    <div class="contenedor">
+
+      <div id="aviso">Cargando REM A07…</div>
+
+      <!-- FILTROS -->
+      <section class="tarjeta filtros">
+        <label for="fAnio">Año<select id="fAnio"></select></label>
+        <label for="fMes">Mes<select id="fMes"></select></label>
+      </section>
+
+      <!-- RESUMEN + CONSULTAS POR ESPECIALIDAD -->
+      <article class="tarjeta">
+        <h2>Consultas médicas de especialidad</h2>
+        <div class="kpis">
+          <div class="kpi marino"><span>Total de consultas</span><b id="kTotal">–</b></div>
+          <div class="kpi"><span>Consultas nuevas</span><b id="kNuevas">–</b></div>
+          <div class="kpi pct"><span>% de consultas nuevas</span><b id="kPctNuevas">–</b></div>
+        </div>
+        <div class="chart-box por-especialidad" id="cajaEsp"><canvas id="gEsp"></canvas></div>
+        <details>
+          <summary>Ver detalle por mes</summary>
+          <div class="scroll"><table id="tabla"></table></div>
+        </details>
+      </article>
+
+      <!-- CONSULTAS NUEVAS SEGÚN ORIGEN y, debajo, PERTINENTES EN BOX (tablas una bajo la otra) -->
+      <article class="tarjeta">
+        <h2>Consultas nuevas según origen</h2>
+        <div class="kpis">
+          <div class="kpi marino"><span>Total consultas nuevas</span><b id="kNueOrigen">–</b></div>
+        </div>
+        <div class="scroll"><table id="tOrigen" class="tabla-esp"></table></div>
+      </article>
+
+      <article class="tarjeta">
+        <h2>Consultas pertinentes según criterio clínico en box</h2>
+        <div class="kpis">
+          <div class="kpi marino"><span>Total pertinentes</span><b id="kPert">–</b></div>
+        </div>
+        <div class="scroll"><table id="tPert" class="tabla-esp"></table></div>
+      </article>
+
+      <!-- CONTRARREFERENCIA Y ALTAS y, debajo, INASISTENTES (gráficos uno bajo el otro) -->
+      <article class="tarjeta">
+        <h2>Contrarreferencia al alta y altas de especialidad</h2>
+        <div class="kpis">
+          <div class="kpi"><span>Contrarreferencias al alta</span><b id="kContra">–</b></div>
+          <div class="kpi marino"><span>Altas de especialidad ambulatoria</span><b id="kAlta">–</b></div>
+        </div>
+        <div class="chart-box por-especialidad" id="cajaAltas"><canvas id="gAltas"></canvas></div>
+      </article>
+
+      <article class="tarjeta">
+        <h2>Inasistentes a consulta médica (NSP)</h2>
+        <div class="kpis">
+          <div class="kpi rojo"><span>Total inasistentes</span><b id="kNsp">–</b></div>
+          <div class="kpi pct"><span>% de inasistencia</span><b id="kPctNsp">–</b></div>
+        </div>
+        <div class="chart-box por-especialidad" id="cajaNsp"><canvas id="gNsp"></canvas></div>
+      </article>
+
+    </div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <strong>Hospital San Luis de Buin-Paine</strong>
+      <p>Unidad de Estadística · Servicio de Salud Metropolitano Sur</p>
+      <p class="pie-nota">Datos agregados. No contiene información de pacientes.</p>
+    </div>
+  </footer>
+
+<script>
+/* =====================================================================
+   RUTA DE LOS REM (relativa a este archivo .html)
+     PAGINA ESTADÍSTICA/
+       ├─ consultas-especialidad.html   ← esta página
+       └─ REM/
+            └─ 2026/
+                 └─ REM_SA/        (o REM_A)
+                      ├─ SA_01.xlsm
+                      ├─ …
+                      └─ SA_12.xlsm
+   La página busca sola la carpeta correcta. Los meses que aún no
+   existen se omiten sin error.
+   ===================================================================== */
+const CARPETAS    = ["REM_SA", "REM_A", "REM SA", "REM A"];
+const PREFIJOS    = ["", "../", "PAGINA ESTADÍSTICA/", "PAGINA ESTADISTICA/"];
+const EXTENSIONES = [".xlsm", ".xlsx", ".xls"];
+const ANIO_DESDE  = 2024;
+const HOJA = "A07";
+const SECCION_INICIO = "Produccion";               // id de la sección en index.html
+let RUTA_REM = null;
+
+/* Especialidades de la consulta abreviada (se buscan por su nombre en la Sección A.1) */
+const ESPECIALIDADES = [
+  "Pediatría", "Medicina Interna", "Enfermedad Respiratoria de Adulto", "Gastroenterología Adulto",
+  "Dermatología", "Neurología Adulto", "Psiquiatría Pediátrica y de la Adolescencia", "Psiquiatría Adulto",
+  "Cirugía General", "Anestesiología", "Obstetricia y Ginecología", "Otorrinolaringología",
+  "Traumatología y Ortopedia", "Urología"
+];
+
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+/* Colores institucionales Hospital San Luis de Buin-Paine */
+const COLOR = { marino: "#0a132d", azul: "#0f69b4", oscuro: "#0a4f8a", rojo: "#eb3c46", claro: "#e8f1fa" };
+
+let datos = [];
+
+/* ---------- utilidades ---------- */
+const norm = v => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+const n    = v => Number(v) || 0;
+const num  = v => Number(v || 0).toLocaleString("es-CL");
+const pct  = (a, b) => b ? (a / b * 100).toLocaleString("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%" : "–";
+const $ = id => document.getElementById(id);
+
+/* ---------- botón Inicio: index.html en esta carpeta o en la de arriba ---------- */
+(async () => {
+  for (const ruta of ["index.html", "../index.html"]) {
+    try { const r = await fetch(ruta, { method: "HEAD", cache: "no-store" });
+          if (r.ok) { $("btnVolver").href = ruta + "#" + SECCION_INICIO; return; } } catch (e) {}
+  }
+})();
+
+/* ---------- lectura de la hoja A07 ---------- */
+function leerA07(wb) {
+  const hoja = wb.Sheets[HOJA];
+  if (!hoja) return null;
+  const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: "", raw: true });
+  const buscaFila = (texto, desde = 0) => filas.findIndex((f, i) => i >= desde && f.some(c => norm(c).startsWith(texto)));
+
+  const iA  = buscaFila("SECCION A");
+  const iA1 = buscaFila("SECCION A.1", iA + 1);
+  const iB  = buscaFila("SECCION B", iA1 + 1);
+  if (iA < 0 || iA1 < 0) return null;
+  const finA1 = iB < 0 ? iA1 + 70 : iB;
+
+  /* columna de un encabezado (se busca en las 4 filas bajo el título de la sección) */
+  const columna = (desde, texto, porDefecto) => {
+    for (let i = desde; i <= desde + 4 && i < filas.length; i++) {
+      const c = filas[i].findIndex(v => norm(v).startsWith(texto));
+      if (c >= 0) return c;
+    }
+    return porDefecto;
+  };
+  const totalA  = filas.slice(iA + 1, iA1).find(f => norm(f[0]) === "TOTAL");
+  const totalA1 = filas.slice(iA1 + 1, finA1).find(f => norm(f[0]) === "TOTAL");
+  if (!totalA || !totalA1) return null;
+
+  /* Sección A */
+  const cNue = columna(iA, "CONSULTAS NUEVAS SEGUN ORIGEN", 23);
+  /* Sección A.1 */
+  const cPert   = columna(iA1, "CONSULTAS PERTINENTES SEGUN CRITERIO CLINICO EN BOX", 9);
+  const cContra = columna(iA1, "CONTRARREFERENCIA AL ALTA", 16);
+  const cAlta   = columna(iA1, "ALTA DE CONSULTA DE ESPECIALIDAD AMBULATORIA", 18);
+  const cNsp    = columna(iA1, "INASISTENTE A CONSULTA MEDICA", 20);
+  const cAbr    = columna(iA1, "CONSULTA ABREVIADA", 22);
+
+  /* datos por especialidad (la clave es el nombre sin tildes ni espacios de más) */
+  const esp = {};
+  const ficha = nombre => {
+    const clave = norm(nombre);
+    return esp[clave] = esp[clave] || {
+      nombre: String(nombre).trim(), total: 0, nuevas: 0,
+      origen: { aps: 0, cae: 0, urg: 0 }, pert: { aps: 0, cae: 0, urg: 0 },
+      contra: 0, alta: 0, nspNuevas: 0, nspControles: 0
+    };
+  };
+  /* Sección A: filas de especialidades (traen números en la columna TOTAL) */
+  const iTotA = filas.indexOf(totalA);
+  for (const f of filas.slice(iA + 1, iTotA)) {
+    if (typeof f[1] !== "number" || !String(f[0]).trim()) continue;
+    const e = ficha(f[0]);
+    e.total = n(f[1]);
+    e.origen = {
+      aps: n(f[cNue + 1]) + n(f[cNue + 5]),
+      cae: n(f[cNue + 2]) + n(f[cNue + 6]),
+      urg: n(f[cNue + 3]) + n(f[cNue + 7])
+    };
+    e.nuevas = e.origen.aps + e.origen.cae + e.origen.urg;
+  }
+  /* Sección A.1: filas de especialidades hasta la fila TOTAL */
+  const iTotA1 = filas.indexOf(totalA1);
+  for (const f of filas.slice(iA1 + 1, iTotA1)) {
+    const nombre = String(f[0]).trim();
+    if (!nombre || norm(nombre).startsWith("ESPECIALIDADES")) continue;
+    const e = ficha(nombre);
+    e.pert = { aps: n(f[cPert + 1]), cae: n(f[cPert + 2]), urg: n(f[cPert + 3]) };
+    e.contra = n(f[cContra]) + n(f[cContra + 1]);
+    e.alta = n(f[cAlta]) + n(f[cAlta + 1]);
+    e.nspNuevas = n(f[cNsp]);
+    e.nspControles = n(f[cNsp + 1]);
+  }
+
+  const abrev = {};
+  const filasA1 = filas.slice(iA1 + 1, finA1);
+  for (const e of ESPECIALIDADES) {
+    const f = filasA1.find(f => norm(f[0]) === norm(e));
+    abrev[e] = f ? n(f[cAbr]) : 0;
+  }
+
+  return {
+    total: n(totalA[1]),
+    nuevas: {
+      menor: { aps: n(totalA[cNue + 1]), cae: n(totalA[cNue + 2]), urg: n(totalA[cNue + 3]) },
+      mayor: { aps: n(totalA[cNue + 5]), cae: n(totalA[cNue + 6]), urg: n(totalA[cNue + 7]) }
+    },
+    pert:   { aps: n(totalA1[cPert + 1]), cae: n(totalA1[cPert + 2]), urg: n(totalA1[cPert + 3]) },
+    contra: { menor: n(totalA1[cContra]), mayor: n(totalA1[cContra + 1]) },
+    alta:   { menor: n(totalA1[cAlta]),   mayor: n(totalA1[cAlta + 1]) },
+    nsp:    { nuevas: n(totalA1[cNsp]),   controles: n(totalA1[cNsp + 1]) },
+    esp, abrev
+  };
+}
+
+/* ---------- búsqueda de la carpeta de los REM ---------- */
+async function existe(url) {
+  try {
+    const r = await fetch(encodeURI(url), { method: "HEAD", cache: "no-store" });
+    if (r.ok) return true;
+    if (r.status === 405 || r.status === 501) {
+      const g = await fetch(encodeURI(url), { cache: "no-store" });
+      return g.ok;
+    }
+  } catch (e) {}
+  return false;
+}
+async function buscarCarpeta(anios) {
+  const probadas = [];
+  for (const pre of PREFIJOS) for (const car of CARPETAS) for (const ext of EXTENSIONES) {
+    const ruta = (anio, mes) => `${pre}REM/${anio}/${car}/SA_${String(mes).padStart(2, "0")}${ext}`;
+    probadas.push(ruta("&lt;año&gt;", "01").replace("SA_01", "SA_xx"));
+    for (const anio of anios) {
+      const hay = await Promise.all(Array.from({ length: 12 }, (_, i) => existe(ruta(anio, i + 1))));
+      if (hay.some(Boolean)) return { ruta, probadas };
+    }
+  }
+  return { ruta: null, probadas };
+}
+
+async function cargar() {
+  const aviso = $("aviso");
+  const hoy = new Date().getFullYear();
+
+  if (location.protocol === "file:") {
+    aviso.classList.add("error");
+    aviso.innerHTML = "La página está abierta con doble clic (la dirección empieza con <b>file://</b>). " +
+      "Así el navegador bloquea la lectura de los REM.<br><small>Ábrela desde el servidor de la página " +
+      "(la dirección debe empezar con http:// o https://).</small>";
+    return;
+  }
+
+  aviso.textContent = "Buscando los archivos REM…";
+  const anios = []; for (let a = hoy; a >= ANIO_DESDE; a--) anios.push(a);
+  const { ruta, probadas } = await buscarCarpeta(anios);
+  if (!ruta) {
+    aviso.classList.add("error");
+    aviso.innerHTML = "No se encontraron los archivos SA_01 … SA_12. Rutas probadas (relativas a esta página):" +
+      "<br><small>" + probadas.join("<br>") + "</small>";
+    return;
+  }
+  RUTA_REM = ruta;
+  aviso.textContent = "Cargando REM A07…";
+
+  const tareas = [];
+  for (let anio = ANIO_DESDE; anio <= hoy; anio++) for (let mes = 1; mes <= 12; mes++) {
+    tareas.push((async () => {
+      try {
+        const r = await fetch(encodeURI(RUTA_REM(anio, mes)) + "?v=" + Date.now(), { cache: "no-store" });
+        if (!r.ok) return null;
+        const wb = XLSX.read(await r.arrayBuffer(), { type: "array", sheets: [HOJA] });
+        const d = leerA07(wb);
+        return d ? { anio, mes, ...d } : null;
+      } catch (e) { return null; }
+    })());
+  }
+  datos = (await Promise.all(tareas)).filter(Boolean);
+
+  if (!datos.length) {
+    aviso.classList.add("error");
+    aviso.innerHTML = `Se encontraron archivos en <b>${RUTA_REM("&lt;año&gt;", "xx")}</b>, pero ninguno trae la hoja ` +
+      `<b>${HOJA}</b> con las secciones A y A.1. Revisa que sean los REM SA correctos.`;
+    return;
+  }
+  aviso.hidden = true;
+  llenarFiltros();
+  actualizar();
+}
+
+/* ---------- filtros ---------- */
+function llenarFiltros() {
+  const anios = [...new Set(datos.map(d => d.anio))].sort((a, b) => b - a);
+  $("fAnio").innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join("");
+  $("fAnio").value = anios[0];
+  llenarMeses();
+}
+function llenarMeses() {
+  const previo = $("fMes").value;
+  const meses = datos.filter(d => d.anio == $("fAnio").value).map(d => d.mes).sort((a, b) => a - b);
+  $("fMes").innerHTML = '<option value="">Todos (acumulado)</option>' +
+    meses.map(m => `<option value="${m}">${MESES[m - 1]}</option>`).join("");
+  if (meses.includes(Number(previo))) $("fMes").value = previo;
+}
+$("fAnio").addEventListener("change", () => { llenarMeses(); actualizar(); });
+$("fMes").addEventListener("change", actualizar);
+
+/* ---------- gráficos (se adaptan al ancho de la pantalla) ---------- */
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = '"Roboto", Arial, sans-serif';
+Chart.defaults.color = "#5f6b7a";
+const tam = (ctx, chico, grande) => { const w = ctx.chart.width || 800; return w < 420 ? chico : w < 700 ? Math.round((chico + grande) / 2) : grande; };
+const fuenteEje   = ctx => ({ size: tam(ctx, 11, 14), weight: "500" });
+const fuenteValor = ctx => ({ size: tam(ctx, 10, 13), weight: "600" });
+const tooltip = {
+  backgroundColor: "#0a132d", titleColor: "#fff", bodyColor: "#e8f1fa", padding: 10, cornerRadius: 8,
+  callbacks: {
+    title: items => String(items[0].label).replace(/,/g, " "),
+    label: ctx => ` ${ctx.dataset.label ? ctx.dataset.label + ": " : ""}${num(ctx.raw)}`
+  }
+};
+
+/* Barras con el valor sobre cada barra (solo valores, sin porcentajes) */
+function graficoBarras(id, { labels, datasets, horizontal = false, leyenda = true, valores = true }) {
+  const eje = horizontal ? "x" : "y", cat = horizontal ? "y" : "x";
+  return new Chart($(id), {
+    type: "bar",
+    data: { labels, datasets: datasets.map(d => ({ borderRadius: 6, maxBarThickness: horizontal ? 34 : 70, ...d })) },
+    options: {
+      indexAxis: horizontal ? "y" : "x",
+      responsive: true, maintainAspectRatio: false, resizeDelay: 100,
+      layout: { padding: { right: horizontal ? 10 : 0, top: 4 } },
+      plugins: {
+        legend: { display: leyenda, position: "top", align: "center",          // leyenda centrada
+                  labels: { usePointStyle: true, pointStyle: "rectRounded", color: "#0a132d", font: fuenteEje } },
+        tooltip,
+        datalabels: {
+          display: ctx => (typeof valores === "function" ? valores(ctx) : valores) && Number(ctx.dataset.data[ctx.dataIndex]) > 0,
+          anchor: "end", align: "end", offset: 2, clamp: true,
+          color: "#0a132d", font: fuenteValor, formatter: v => num(v)
+        }
+      },
+      scales: {
+        [eje]: { beginAtZero: true, grace: "14%", ticks: { callback: v => num(v), font: fuenteEje, precision: 0 },
+                 grid: { color: "#dde3ea" }, border: { display: false } },
+        [cat]: { grid: { display: false }, ticks: { color: "#0a132d", font: fuenteEje, autoSkip: false, maxRotation: 0 } }
+      }
+    }
+  });
+}
+
+/* Gráficos horizontales por especialidad */
+const barrasEsp = (id, series) => graficoBarras(id, {
+  labels: [],
+  datasets: series.map(([label, color]) => ({ label, data: [], backgroundColor: color, categoryPercentage: 0.82, barPercentage: 0.92 })),
+  horizontal: true
+});
+const gEsp    = barrasEsp("gEsp",    [["Total de consultas", COLOR.marino], ["Consultas nuevas", COLOR.azul]]);
+const gAltas  = barrasEsp("gAltas",  [["Contrarreferencia al alta", COLOR.azul], ["Alta de consulta de especialidad ambulatoria", COLOR.marino]]);
+const gNsp    = barrasEsp("gNsp",    [["Nuevas", COLOR.azul], ["Controles", COLOR.rojo]]);
+const graficos = [gEsp, gAltas, gNsp];
+
+/* Vuelve a medir los gráficos cuando cambia el tamaño de la página */
+function ajustarGraficos() { requestAnimationFrame(() => graficos.forEach(g => g.resize())); }
+document.querySelectorAll(".chart-box").forEach(c => new ResizeObserver(ajustarGraficos).observe(c));
+window.addEventListener("load", ajustarGraficos);
+if (document.fonts) document.fonts.ready.then(ajustarGraficos);
+document.querySelector("details").addEventListener("toggle", ajustarGraficos);
+/* al girar el celular o cambiar el tamaño de la ventana, se recalcula el alto de cada gráfico */
+let esperaResize;
+window.addEventListener("resize", () => {
+  clearTimeout(esperaResize);
+  esperaResize = setTimeout(() => { if (datos.length) actualizar(); }, 200);
+});
+
+/* Etiquetas largas de especialidades en dos líneas */
+const partir = (txt, max = 22) => {
+  if (txt.length <= max) return txt;
+  const pal = txt.split(" "); const lineas = [""];
+  for (const p of pal) {
+    const i = lineas.length - 1;
+    if ((lineas[i] + " " + p).trim().length > max && lineas[i]) lineas.push(p); else lineas[i] = (lineas[i] + " " + p).trim();
+  }
+  return lineas;
+};
+
+/* ---------- sumas ---------- */
+function sumar(lista) {
+  const t = {
+    total: 0,
+    nuevas: { menor: { aps: 0, cae: 0, urg: 0 }, mayor: { aps: 0, cae: 0, urg: 0 } },
+    pert: { aps: 0, cae: 0, urg: 0 }, contra: { menor: 0, mayor: 0 }, alta: { menor: 0, mayor: 0 },
+    nsp: { nuevas: 0, controles: 0 }, abrev: Object.fromEntries(ESPECIALIDADES.map(e => [e, 0])), esp: {}
+  };
+  for (const d of lista) {
+    t.total += d.total;
+    for (const g of ["menor", "mayor"]) for (const o of ["aps", "cae", "urg"]) t.nuevas[g][o] += d.nuevas[g][o];
+    for (const o of ["aps", "cae", "urg"]) t.pert[o] += d.pert[o];
+    for (const g of ["menor", "mayor"]) { t.contra[g] += d.contra[g]; t.alta[g] += d.alta[g]; }
+    t.nsp.nuevas += d.nsp.nuevas; t.nsp.controles += d.nsp.controles;
+    for (const e of ESPECIALIDADES) t.abrev[e] += d.abrev[e];
+    for (const [clave, v] of Object.entries(d.esp || {})) {
+      const e = t.esp[clave] = t.esp[clave] || {
+        nombre: v.nombre, total: 0, nuevas: 0, origen: { aps: 0, cae: 0, urg: 0 }, pert: { aps: 0, cae: 0, urg: 0 },
+        contra: 0, alta: 0, nspNuevas: 0, nspControles: 0
+      };
+      for (const k of ["total", "nuevas", "contra", "alta", "nspNuevas", "nspControles"]) e[k] += v[k];
+      for (const o of ["aps", "cae", "urg"]) { e.origen[o] += v.origen[o]; e.pert[o] += v.pert[o]; }
+    }
+  }
+  return t;
+}
+const totalNuevas = t => Object.values(t.nuevas.menor).reduce((a, b) => a + b, 0) + Object.values(t.nuevas.mayor).reduce((a, b) => a + b, 0);
+const suma = o => Object.values(o).reduce((a, b) => a + b, 0);
+
+/* Dibuja un gráfico por especialidad: solo las que tienen datos, de mayor a menor.
+   El alto crece según la cantidad de especialidades y de barras por especialidad. */
+function dibujar(grafico, idCaja, lista, valores) {
+  const filas = lista.map(e => ({ e, v: valores(e) }))
+                     .filter(x => x.v.some(v => v > 0))
+                     .sort((a, b) => suma(b.v) - suma(a.v));
+  const caja = $(idCaja);
+  const barras = grafico.data.datasets.length;
+  const porFila = (caja.clientWidth < 600 ? 26 : 21) * barras + 14;
+  /* alto ideal según las especialidades, pero nunca más alto que la pantalla:
+     así cada gráfico se ve completo sin desplazarse */
+  const ideal  = filas.length * porFila + 90;
+  const maximo = Math.max(320, window.innerHeight - 120);
+  caja.style.height = Math.round(Math.min(Math.max(260, ideal), maximo)) + "px";
+  grafico.data.labels = filas.map(x => partir(x.e.nombre));
+  grafico.data.datasets.forEach((d, i) => d.data = filas.map(x => x.v[i]));
+  grafico.update();
+}
+
+/* Tabla por especialidad: solo las que tienen datos, de mayor a menor, con fila de total */
+function tablaEsp(idTabla, columnas, lista, valores) {
+  const filas = lista.map(e => ({ nombre: e.nombre, v: valores(e) }))
+                     .filter(x => x.v.some(v => v > 0))
+                     .sort((a, b) => suma(b.v) - suma(a.v));
+  const tot = columnas.map((_, i) => filas.reduce((s, x) => s + x.v[i], 0));
+  const celdas = v => v.map(x => `<td>${num(x)}</td>`).join("") + `<td class="col-total">${num(suma(v))}</td>`;
+  $(idTabla).innerHTML =
+    `<thead><tr><th>Especialidad</th>${columnas.map(c => `<th>${c}</th>`).join("")}<th>Total</th></tr></thead>
+     <tbody>${filas.length ? filas.map(x => `<tr><td>${x.nombre}</td>${celdas(x.v)}</tr>`).join("")
+                           : `<tr><td colspan="${columnas.length + 2}">Sin datos para el período</td></tr>`}</tbody>
+     <tfoot><tr><td>Total</td>${celdas(tot)}</tr></tfoot>`;
+}
+
+/* ---------- actualizar todo según los filtros ---------- */
+function actualizar() {
+  const anio = $("fAnio").value, mes = $("fMes").value;
+  const delAnio = datos.filter(d => d.anio == anio).sort((a, b) => a.mes - b.mes);
+  const t = sumar(delAnio.filter(d => !mes || d.mes == mes));
+
+  /* resumen */
+  const nuevas = totalNuevas(t);
+  $("kTotal").textContent = num(t.total);
+  $("kNuevas").textContent = num(nuevas);
+  $("kPctNuevas").textContent = pct(nuevas, t.total);
+
+  const lista = Object.values(t.esp);
+
+  /* consultas por especialidad */
+  dibujar(gEsp, "cajaEsp", lista, e => [e.total, e.nuevas]);
+
+  /* consultas nuevas según origen */
+  const origen = ["aps", "cae", "urg"].map(o => t.nuevas.menor[o] + t.nuevas.mayor[o]);
+  $("kNueOrigen").textContent = num(suma(origen));
+  tablaEsp("tOrigen", ["APS", 'CAE/CDT/<wbr>CRS/<wbr><span class="largo">Hospitalización</span><span class="corto">Hosp.</span>', "Urgencia"], lista, e => [e.origen.aps, e.origen.cae, e.origen.urg]);
+
+  /* pertinencia en box */
+  $("kPert").textContent = num(suma(t.pert));
+  tablaEsp("tPert", ["APS", 'CDT/CAE/<wbr>CRS/<wbr><span class="largo">Hospitalizado</span><span class="corto">Hosp.</span>', "Urgencia"], lista, e => [e.pert.aps, e.pert.cae, e.pert.urg]);
+
+  /* contrarreferencia y altas */
+  $("kContra").textContent = num(t.contra.menor + t.contra.mayor);
+  $("kAlta").textContent = num(t.alta.menor + t.alta.mayor);
+  dibujar(gAltas, "cajaAltas", lista, e => [e.contra, e.alta]);
+
+  /* inasistentes: % = NSP ÷ (consultas realizadas + NSP) */
+  const nsp = t.nsp.nuevas + t.nsp.controles;
+  $("kNsp").textContent = num(nsp);
+  $("kPctNsp").textContent = pct(nsp, t.total + nsp);
+  dibujar(gNsp, "cajaNsp", lista, e => [e.nspNuevas, e.nspControles]);
+
+  ajustarGraficos();
+
+  /* tabla por mes */
+  const fila = (d, nombre) => {
+    const nue = totalNuevas(d), ns = d.nsp.nuevas + d.nsp.controles;
+    return `<tr><td>${nombre}</td><td>${num(d.total)}</td><td>${num(nue)}</td><td>${pct(nue, d.total)}</td>
+      <td>${num(suma(d.pert))}</td><td>${num(d.contra.menor + d.contra.mayor)}</td><td>${num(d.alta.menor + d.alta.mayor)}</td>
+      <td>${num(ns)}</td><td>${pct(ns, d.total + ns)}</td><td>${num(suma(d.abrev))}</td></tr>`;
+  };
+  $("tabla").innerHTML =
+    `<thead><tr><th>Mes</th><th>Total<br>consultas</th><th>Consultas<br>nuevas</th><th>%<br>nuevas</th>
+       <th>Pertinentes<br>en box</th><th>Contrarref.<br>al alta</th><th>Altas</th>
+       <th>Inasistentes<br>NSP</th><th>%<br>inasist.</th><th>Consulta<br>abreviada</th></tr></thead>
+     <tbody>${delAnio.map(d => fila(d, MESES[d.mes - 1])).join("")}</tbody>
+     <tfoot>${fila(sumar(delAnio), "Total " + anio)}</tfoot>`;
+}
+
+cargar();
+</script>
 </body>
 </html>
