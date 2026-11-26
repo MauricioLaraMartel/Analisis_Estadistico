@@ -20,11 +20,14 @@
     --ancho:100%;                                   /* la página usa todo el ancho disponible */
     --margen:clamp(10px, 2.2vw, 32px);              /* márgenes laterales */
     --separacion:clamp(12px, 1.4vw, 24px);          /* espacio entre tarjetas */
-    --alto-grafico:clamp(280px, 48vh, 620px);       /* alto del gráfico grande */
-    --alto-grafico-bajo:clamp(260px, 42vh, 560px);  /* alto de los gráficos lado a lado */
+    /* Alto de los gráficos según la pantalla: cada tarjeta (título + indicadores + gráfico)
+       cabe completa a la vista, con un mínimo para celular y un máximo para monitores grandes */
+    --alto-grafico:clamp(260px, calc(100vh - 240px), 520px);       /* gráfico Producción */
+    --alto-grafico-bajo:clamp(240px, calc(100vh - 470px), 440px);  /* gráficos C2 y Demora */
     --demanda:var(--azul-marino); --atendidos:var(--azul); --retiro:var(--rojo);
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none !important}
   body{font-family:"Roboto",Arial,sans-serif;background:var(--gris-fondo);color:var(--texto);line-height:1.6}
 
   /* Barra de gobierno azul y rojo */
@@ -80,6 +83,7 @@
   .c2-kpi span{font-size:.72rem;color:var(--texto-suave);text-transform:uppercase;font-weight:500;letter-spacing:.5px}
   .c2-kpi b{display:block;font-size:clamp(1.2rem, .9rem + .9vw, 1.8rem);color:var(--azul-marino)}
   .c2-kpi.destacado{background:var(--azul-marino);border-color:var(--rojo)}
+  .c2-kpi.destacado-suave{border-color:var(--azul-oscuro)}
   .c2-kpi.destacado span{color:#c9d3e0}
   .c2-kpi.destacado b{color:var(--blanco)}
 
@@ -122,6 +126,10 @@
   }
 
   @media (max-width:480px){
+    :root{
+      --alto-grafico:clamp(260px, 55vh, 400px);
+      --alto-grafico-bajo:clamp(220px, calc(100vh - 570px), 340px);
+    }
     .lado-a-lado .c2-kpis,
     .lado-a-lado .c2-kpis.tres{grid-template-columns:repeat(2,1fr)}
     .btn-volver{width:100%;text-align:center}
@@ -129,7 +137,7 @@
 
   /* Celular acostado o pantallas muy bajas: que el gráfico no desaparezca */
   @media (max-height:500px){
-    .chart-box, .chart-box.bajo{height:300px}
+    .chart-box, .chart-box.bajo{height:260px}
   }
 </style>
 </head>
@@ -208,9 +216,9 @@
     <h2 class="titulo">Demora de ingreso a cama hospitalaria</h2>
     <p class="subtitulo">Pacientes con indicación de hospitalización en espera de camas en UEH</p>
     <div class="c2-kpis tres">
-      <div class="c2-kpi" style="border-color:var(--azul-marino)"><span>Total</span><b id="dTotal">0</b></div>
+      <div class="c2-kpi destacado-suave"><span>Total</span><b id="dTotal">0</b></div>
       <div class="c2-kpi" style="border-color:var(--azul)"><span>Menos de 12 horas</span><b id="dMenos12">0</b></div>
-      <div class="c2-kpi" style="border-color:#5b9bd5"><span>12 – 24 horas</span><b id="d12a24">0</b></div>
+      <div class="c2-kpi" style="border-color:var(--azul-marino)"><span>12 – 24 horas</span><b id="d12a24">0</b></div>
       <div class="c2-kpi" style="border-color:var(--rojo)"><span>Mayor a 24 horas</span><b id="dMas24">0</b></div>
       <div class="c2-kpi" style="border-color:var(--texto-suave)"><span>Permanecen en UEH</span><b id="dPermanecen">0</b></div>
       <div class="c2-kpi destacado"><span>% ingresan en menos de 12 horas</span><b id="dPct">–</b></div>
@@ -244,7 +252,7 @@ const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto"
    RUTA DEL EXCEL (relativa a este archivo .html)
    Estructura esperada:
      PAGINA ESTADISTICA/
-       ├─ index.html            ← esta página
+       ├─ urgencia.html         ← esta página
        └─ bdurgencia/
             └─ l.urgencia.xlsx  ← base de datos
    ===================================================================== */
@@ -253,7 +261,8 @@ const RUTA_EXCEL = "bdurgencia/l.urgencia.xlsx";
 /* Columnas que se usan del Excel */
 const COL_CLASIFICACION = "CLASIFICACION2";
 const COL_ESTADO        = "ESTADO CITA";      // ATENDIDO / RETIRO SIN ALTA
-const COL_FECHA         = "Fecha Admisión";   // dd/mm/aaaa
+/* Fecha de admisión: la base nueva la trae como "FECHA ADM 2"; se acepta también el nombre anterior */
+const COL_FECHA         = ["FECHA ADM 2", "Fecha Admisión"];
 const COL_CATEGORIA     = "Primera Categorización";
 /* Demora desde la admisión hasta la atención clínica (formato hh:mm:ss) */
 const COL_TIEMPO        = "DEMORA AC";
@@ -272,13 +281,16 @@ const COLOR = { demanda: "#0a132d", atendidos: "#0f69b4", retiro: "#eb3c46" };
      PAGINA ESTADISTICA/
        └─ REM/
             └─ 2026/
-                 └─ REM_A/
+                 └─ REM_A/        (o REM_SA: se detecta sola)
                       ├─ SA_01.xlsm
                       ├─ …
                       └─ SA_12.xlsm
    Los meses que aún no existen se omiten sin error.
    ===================================================================== */
-const RUTA_REM = (anio, mes) => `REM/${anio}/REM_A/SA_${String(mes).padStart(2, "0")}.xlsm`;
+/* La página prueba sola estas carpetas y extensiones y usa la primera donde encuentre archivos */
+const CARPETAS_REM    = ["REM_A", "REM_SA", "REM A", "REM SA"];
+const EXTENSIONES_REM = [".xlsm", ".xlsx", ".xls"];
+let RUTA_REM = (anio, mes) => `REM/${anio}/REM_A/SA_${String(mes).padStart(2, "0")}.xlsm`;
 const REM_HOJA = "A08";
 /* Ítems de la sección D que se suman (columna TOTAL) */
 const D_ITEMS = [
@@ -416,7 +428,7 @@ const graficoD = new Chart(document.getElementById("graficoD"), {
   data: {
     labels: [["Menos de", "12 horas"], ["12 – 24", "horas"], ["Mayor a", "24 horas"], ["Permanecen", "en UEH"]],
     datasets: [{ label: "Pacientes", data: [0, 0, 0, 0],
-                 backgroundColor: [COLOR.atendidos, "#5b9bd5", COLOR.retiro, "#5f6b7a"],
+                 backgroundColor: [COLOR.atendidos, COLOR.demanda, COLOR.retiro, "#5f6b7a"],
                  borderRadius: 6, maxBarThickness: 180 }]
   },
   options: {
@@ -461,7 +473,7 @@ function actualizarD() {
 
   /* Solo muestra un aviso si no hay archivos REM para el periodo */
   document.getElementById("dNota").textContent = meses.length
-    ? "" : "No hay archivos REM A cargados para el periodo seleccionado.";
+    ? "" : "No hay archivos REM (hoja A08) para el periodo seleccionado.";
 }
 
 function actualizarC2() {
@@ -544,7 +556,7 @@ function parseFecha(v) {
    Acepta: hora de Excel (fracción de día, incluso demoras de más de 24 h) o texto "hh:mm:ss" / "hh:mm". */
 function parseMinutos(v) {
   if (v === "" || v === null || v === undefined) return null;
-  if (typeof v === "number") return Math.round(v * 86400) / 60;   // redondeo al segundo
+  if (typeof v === "number") return v < 0 ? null : Math.round(v * 86400) / 60;   // redondeo al segundo; negativo = error de registro
   const s = String(v).trim();
   const m = s.match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?/);
   if (m) return +m[1] * 60 + +m[2] + (m[3] ? +m[3] / 60 : 0);
@@ -571,12 +583,34 @@ function leerSeccionD(wb) {
   return res;
 }
 
+async function existe(url) {
+  try {
+    const r = await fetch(encodeURI(url), { method: "HEAD", cache: "no-store" });
+    if (r.ok) return true;
+    if (r.status === 405 || r.status === 501) return (await fetch(encodeURI(url), { cache: "no-store" })).ok;
+  } catch (e) {}
+  return false;
+}
+async function buscarCarpetaREM(anios) {
+  for (const car of CARPETAS_REM) for (const ext of EXTENSIONES_REM) {
+    const ruta = (anio, mes) => `REM/${anio}/${car}/SA_${String(mes).padStart(2, "0")}${ext}`;
+    for (const anio of anios) {
+      const hay = await Promise.all(Array.from({ length: 12 }, (_, i) => existe(ruta(anio, i + 1))));
+      if (hay.some(Boolean)) return ruta;
+    }
+  }
+  return null;
+}
+
 async function cargarREM(anios) {
+  const ruta = await buscarCarpetaREM(anios);
+  if (!ruta) { datosD = []; return; }
+  RUTA_REM = ruta;
   const tareas = [];
   for (const anio of anios) for (let mes = 1; mes <= 12; mes++) {
     tareas.push((async () => {
       try {
-        const resp = await fetch(RUTA_REM(anio, mes) + "?v=" + Date.now(), { cache: "no-store" });
+        const resp = await fetch(encodeURI(RUTA_REM(anio, mes)) + "?v=" + Date.now(), { cache: "no-store" });
         if (!resp.ok) return null;                      // mes aún no cargado
         const wb = XLSX.read(await resp.arrayBuffer(), { type: "array", sheets: [REM_HOJA] });
         const d = leerSeccionD(wb);
@@ -589,6 +623,13 @@ async function cargarREM(anios) {
 
 async function cargarExcel() {
   const aviso = document.getElementById("cargando");
+  if (location.protocol === "file:") {
+    aviso.classList.add("error");
+    aviso.innerHTML = "La página está abierta con doble clic (la dirección empieza con <b>file://</b>). " +
+      "Así el navegador bloquea la lectura del Excel.<br><small>Ábrela desde el servidor de la página " +
+      "(la dirección debe empezar con http:// o https://).</small>";
+    return;
+  }
   try {
     const resp = await fetch(RUTA_EXCEL + "?v=" + Date.now(), { cache: "no-store" });
     if (!resp.ok) throw new Error(`No se encontró ${RUTA_EXCEL} (HTTP ${resp.status}).`);
@@ -599,11 +640,11 @@ async function cargarExcel() {
     const cab = filas[0].map(norm);
     const iClas = cab.indexOf(norm(COL_CLASIFICACION));
     const iEst  = cab.indexOf(norm(COL_ESTADO));
-    const iFec  = cab.indexOf(norm(COL_FECHA));
+    const iFec  = COL_FECHA.map(c => cab.indexOf(norm(c))).find(i => i >= 0) ?? -1;
     const iCat  = cab.indexOf(norm(COL_CATEGORIA));
     const iTie  = cab.indexOf(norm(COL_TIEMPO));
     if (iClas < 0 || iEst < 0 || iFec < 0)
-      throw new Error(`Faltan columnas en el Excel: ${[iClas<0&&COL_CLASIFICACION, iEst<0&&COL_ESTADO, iFec<0&&COL_FECHA].filter(Boolean).join(", ")}`);
+      throw new Error(`Faltan columnas en el Excel: ${[iClas<0&&COL_CLASIFICACION, iEst<0&&COL_ESTADO, iFec<0&&COL_FECHA[0]].filter(Boolean).join(", ")}`);
 
     /* Agrupa por año, mes y CLASIFICACION2 */
     const acc = {}, accC2 = {};
@@ -633,7 +674,7 @@ async function cargarExcel() {
     }
     datos = Object.values(acc);
     datosC2 = Object.values(accC2);
-    aviso.textContent = "Cargando REM A (A08 sección D)…";
+    aviso.textContent = "Cargando REM (A08 sección D)…";
     await cargarREM([...new Set(datos.map(d => d.anio))]);
     c2ColumnasOk = iCat >= 0 && iTie >= 0;
     if (!c2ColumnasOk)
