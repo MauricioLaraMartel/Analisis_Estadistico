@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Especialidades Odontológicas | Hospital San Luis de Buin-Paine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Estilos propios de esta página (van después de estilos.css) -->
+  <style>
+    [hidden] { display: none !important; }
+
+    /* Alto de los gráficos según la pantalla: cada tarjeta cabe completa a la vista */
+    :root {
+      --alto-grafico: clamp(260px, calc(100vh - 370px), 520px);
+      --alto-grafico-bajo: clamp(240px, calc(100vh - 340px), 460px);
+    }
+
+    /* ---------- Cabecera ---------- */
+    .cabecera-pagina {
+      background: linear-gradient(135deg, var(--azul-marino) 0%, var(--azul) 100%);
+      color: var(--blanco);
+      padding: clamp(28px, 4vw, 56px) 0 clamp(30px, 4.5vw, 60px);
+    }
+    .cabecera-pagina h1 {
+      color: var(--blanco);
+      font-size: clamp(1.4rem, 1rem + 2vw, 2.6rem);
+      text-wrap: balance;
+    }
+
+    /* ---------- Contenido ---------- */
+    .contenido { padding: clamp(20px, 3vw, 48px) 0 clamp(10px, 1.5vw, 24px); }
+    .tarjeta {
+      background: var(--blanco);
+      border-radius: 12px;
+      box-shadow: var(--sombra);
+      padding: clamp(14px, 1.8vw, 30px);
+      margin-bottom: clamp(16px, 2vw, 32px);
+      min-width: 0;
+    }
+    .tarjeta h2 { font-size: clamp(1.1rem, 0.95rem + 0.6vw, 1.6rem); text-wrap: balance; }
+
+    /* Filtros */
+    .filtros { display: flex; flex-wrap: wrap; gap: clamp(10px, 1.4vw, 20px); align-items: flex-end; }
+    .filtros label {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: 0.8rem; font-weight: 500; color: var(--texto-suave);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      flex: 1 1 min(200px, 100%); min-width: 0;
+    }
+    select {
+      font: inherit; font-size: 1rem; text-transform: none; letter-spacing: 0;
+      min-height: 44px; padding: 8px 12px; width: 100%;
+      border: 1px solid var(--borde); border-radius: var(--radio);
+      background: var(--blanco); color: var(--azul-marino);
+    }
+    select:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+    /* Indicadores */
+    .kpis {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+      gap: clamp(8px, 1vw, 14px); width: 100%; margin-bottom: clamp(14px, 1.6vw, 22px);
+    }
+    .kpi {
+      border-left: 5px solid var(--azul);
+      background: var(--azul-claro);
+      border-radius: var(--radio);
+      padding: clamp(10px, 1vw, 16px) clamp(10px, 1.1vw, 16px);
+      min-width: 0;
+    }
+    .kpi span {
+      display: block; font-size: clamp(0.68rem, 0.64rem + 0.18vw, 0.82rem); color: var(--texto-suave);
+      text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500;
+    }
+    .kpi b {
+      display: block; color: var(--azul-marino);
+      font-size: clamp(1.15rem, 0.9rem + 1vw, 1.9rem); line-height: 1.2;
+      overflow-wrap: anywhere; font-variant-numeric: tabular-nums;
+    }
+    .kpi.marino { border-color: var(--azul-marino); }
+    .kpi.gris   { border-color: var(--texto-suave); }
+    .kpi.rojo   { border-color: var(--rojo); }
+    .kpi.pct { background: var(--azul-marino); border-color: var(--rojo); }
+    .kpi.pct span { color: #c9d3e0; }
+    .kpi.pct b { color: var(--blanco); }
+
+    /* Gráficos */
+    .chart-box { position: relative; width: 100%; height: var(--alto-grafico); }
+    .chart-box.bajo { height: var(--alto-grafico-bajo); }
+
+    /* Tablas */
+    details { margin-top: clamp(16px, 2vw, 24px); }
+    summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 500; color: var(--azul); }
+    @media (hover: hover) { summary:hover { color: var(--azul-oscuro); } }
+    .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; }
+    table { border-collapse: collapse; width: 100%; font-size: clamp(0.74rem, 0.7rem + 0.22vw, 0.95rem); font-variant-numeric: tabular-nums; }
+    th, td { padding: clamp(5px, 0.6vw, 10px) clamp(6px, 0.7vw, 12px); border-bottom: 1px solid var(--borde); text-align: right; white-space: nowrap; }
+    th {
+      background: var(--azul-marino); color: var(--blanco); font-weight: 500;
+      font-size: clamp(0.66rem, 0.62rem + 0.15vw, 0.8rem); text-transform: uppercase; letter-spacing: 0.4px;
+      white-space: normal; line-height: 1.25; vertical-align: bottom;
+    }
+    th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--blanco); z-index: 1; white-space: normal; min-width: 8em; }
+    th:first-child { background: var(--azul-marino); }
+    tbody tr:nth-child(even) td { background: var(--gris-fondo); }
+    tfoot td { font-weight: 700; background: var(--azul-claro); color: var(--azul-marino); border-top: 2px solid var(--azul); }
+
+    #aviso {
+      padding: 14px 18px; border-radius: var(--radio); background: var(--azul-claro); color: var(--azul);
+      border-left: 5px solid var(--azul); font-weight: 500; margin-bottom: clamp(16px, 2vw, 24px);
+      overflow-wrap: anywhere;
+    }
+    #aviso.error { background: #fdecec; color: #b3242c; border-left-color: var(--rojo); }
+
+    /* Celular */
+    @media (max-width: 480px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      :root {
+        --alto-grafico: clamp(260px, 55vh, 400px);
+        --alto-grafico-bajo: clamp(240px, 50vh, 360px);
+      }
+    }
+    /* Celular acostado o pantallas muy bajas */
+    @media (max-height: 500px) {
+      :root { --alto-grafico: 260px; --alto-grafico-bajo: 260px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="barra-gobierno">
+    <span class="azul"></span>
+    <span class="rojo"></span>
+  </div>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado-fila">
+      <a href="index.html" class="marca">
+        <div class="marca-texto">
+          <span class="marca-red">Servicio de Salud Metropolitano Sur</span>
+          <strong>Hospital San Luis de Buin-Paine</strong>
+          <span class="marca-unidad">Unidad de Estadística</span>
+        </div>
+      </a>
+      <nav class="menu">
+        <a href="index.html#Produccion" id="btnVolver">⟵ Inicio</a>
+        <a href="manuales.html">Manuales</a>
+        <a href="index.html#contacto">Contacto</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="cabecera-pagina">
+    <div class="contenedor">
+      <h1>Producción · Especialidades Odontológicas</h1>
+    </div>
+  </section>
+
+  <main class="contenido fondo-gris">
+    <div class="contenedor">
+
+      <div id="aviso">Cargando REM A09…</div>
+
+      <!-- FILTROS -->
+      <section class="tarjeta filtros">
+        <label for="fAnio">Año<select id="fAnio"></select></label>
+        <label for="fMes">Mes<select id="fMes"></select></label>
+      </section>
+
+      <!-- RESUMEN + PRODUCCIÓN POR ESPECIALIDAD -->
+      <article class="tarjeta">
+        <h2>Producción por especialidad</h2>
+        <div class="kpis">
+          <div class="kpi marino"><span>Consultas nuevas</span><b id="kNueva">–</b></div>
+          <div class="kpi"><span>Controles</span><b id="kControl">–</b></div>
+          <div class="kpi gris"><span>Ingresos a tratamiento</span><b id="kIngreso">–</b></div>
+          <div class="kpi rojo"><span>Altas de tratamiento</span><b id="kAlta">–</b></div>
+        </div>
+        <div class="chart-box"><canvas id="gProduccion"></canvas></div>
+        <details>
+          <summary>Ver detalle por especialidad</summary>
+          <div class="scroll"><table id="tEsp"></table></div>
+        </details>
+      </article>
+
+      <!-- INASISTENTES Y CONSULTAS PERTINENTES -->
+      <article class="tarjeta">
+        <h2>Inasistentes y consultas pertinentes</h2>
+        <div class="kpis">
+          <div class="kpi rojo"><span>Inasistentes</span><b id="kInas">–</b></div>
+          <div class="kpi pct"><span>% de inasistencia</span><b id="kPctInas">–</b></div>
+          <div class="kpi"><span>Consultas pertinentes</span><b id="kPert">–</b></div>
+          <div class="kpi pct"><span>% de pertinencia</span><b id="kPctPert">–</b></div>
+        </div>
+        <div class="chart-box bajo"><canvas id="gCalidad"></canvas></div>
+      </article>
+
+      <!-- EVOLUCIÓN MENSUAL -->
+      <article class="tarjeta">
+        <h2>Evolución mensual de consultas</h2>
+        <div class="chart-box bajo"><canvas id="gMensual"></canvas></div>
+        <details>
+          <summary>Ver detalle por mes</summary>
+          <div class="scroll"><table id="tMes"></table></div>
+        </details>
+      </article>
+
+    </div>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <strong>Hospital San Luis de Buin-Paine</strong>
+      <p>Unidad de Estadística · Servicio de Salud Metropolitano Sur</p>
+      <p class="pie-nota">Datos agregados. No contiene información de pacientes.</p>
+    </div>
+  </footer>
+
+<script>
+/* =====================================================================
+   RUTA DE LOS REM (relativa a este archivo .html)
+     PAGINA ESTADÍSTICA/
+       ├─ odontologia.html     ← esta página
+       └─ REM/
+            └─ 2026/
+                 └─ REM_SA/    (o REM_A: se detecta sola)
+                      ├─ SA_01.xlsm
+                      ├─ …
+                      └─ SA_12.xlsm
+   Hoja A09 · Sección I. Los meses que aún no existen se omiten sin error.
+   ===================================================================== */
+const CARPETAS    = ["REM_SA", "REM_A", "REM SA", "REM A"];
+const PREFIJOS    = ["", "../", "PAGINA ESTADÍSTICA/", "PAGINA ESTADISTICA/"];
+const EXTENSIONES = [".xlsm", ".xlsx", ".xls"];
+const ANIO_DESDE  = 2024;
+const HOJA = "A09";
+const SECCION_INICIO = "Produccion";                 // id de la sección en index.html
+let RUTA_REM = null;
+
+/* Especialidades que se muestran (nombre en el REM → nombre en la página) */
+const ESPECIALIDADES = [
+  { rem: "ENDODONCIA",                          nombre: "Endodoncia" },
+  { rem: "PERIODONCIA",                         nombre: "Periodoncia" },
+  { rem: "REHABILITACION: PROTESIS REMOVIBLE",  nombre: "Rehabilitación: Prótesis removible" }
+];
+/* Filas de cada especialidad (columna B de la sección I) */
+const TIPOS = { "CONSULTA NUEVA": "nueva", "CONTROL": "control", "INGRESO A TRATAMIENTO": "ingreso", "ALTAS DE TRATAMIENTO": "alta" };
+
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const MESES_CORTOS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+/* Colores institucionales Hospital San Luis de Buin-Paine */
+const COLOR = { marino: "#0a132d", azul: "#0f69b4", rojo: "#eb3c46", gris: "#5f6b7a" };
+const COLOR_ESP = [COLOR.marino, COLOR.azul, COLOR.rojo];
+
+let datos = [];   // { anio, mes, esp: { [nombre]: { nueva, control, ingreso, alta, inas, pert } } }
+
+/* ---------- utilidades ---------- */
+const norm = v => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+const n    = v => Number(v) || 0;
+const num  = v => Number(v || 0).toLocaleString("es-CL");
+const pct  = (a, b) => b ? (a / b * 100).toLocaleString("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%" : "–";
+const $ = id => document.getElementById(id);
+const vacio = () => ({ nueva: 0, control: 0, ingreso: 0, alta: 0, inas: 0, pert: 0 });
+
+/* ---------- botón Inicio: index.html en esta carpeta o en la de arriba ---------- */
+(async () => {
+  for (const ruta of ["index.html", "../index.html"]) {
+    try { const r = await fetch(ruta, { method: "HEAD", cache: "no-store" });
+          if (r.ok) { $("btnVolver").href = ruta + "#" + SECCION_INICIO; return; } } catch (e) {}
+  }
+})();
+
+/* ---------- lectura de la hoja A09, sección I ---------- */
+function leerA09(wb) {
+  const hoja = wb.Sheets[HOJA];
+  if (!hoja) return null;
+  const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: "", raw: true });
+  const ini = filas.findIndex(f => /^SECCION I[\s:]/.test(norm(f[0])));
+  if (ini < 0) return null;
+  let fin = filas.findIndex((f, i) => i > ini && /^SECCION [J-Z]/.test(norm(f[0])));
+  if (fin < 0) fin = filas.length;
+
+  /* columnas (se buscan por su encabezado en las filas bajo el título) */
+  const columna = (prueba, porDefecto) => {
+    for (let i = ini; i <= ini + 4; i++) {
+      const c = (filas[i] || []).findIndex(v => prueba(norm(v)));
+      if (c >= 0) return c;
+    }
+    return porDefecto;
+  };
+  const cTotal = columna(v => v === "TOTAL", 3);
+  const cPert  = columna(v => v.startsWith("SEGUN PROTOCOLO DE REFERENCIA"), 40);
+  const cInas  = columna(v => v === "INASISTENTE", 42);
+
+  const esp = Object.fromEntries(ESPECIALIDADES.map(e => [e.nombre, vacio()]));
+  let actual = null;
+  for (const f of filas.slice(ini + 1, fin)) {
+    if (String(f[0]).trim()) {
+      const e = ESPECIALIDADES.find(x => norm(f[0]) === x.rem);
+      actual = e ? e.nombre : null;
+    }
+    if (!actual) continue;
+    const d = esp[actual];
+    const tipo = TIPOS[norm(f[1])];
+    if (tipo) d[tipo] += n(f[cTotal]);
+    d.inas += n(f[cInas]);          // suma los inasistentes de todas las filas de la especialidad
+    d.pert += n(f[cPert]);          // consultas pertinentes según protocolo de referencia
+  }
+  return esp;
+}
+
+/* ---------- búsqueda de la carpeta de los REM ---------- */
+async function existe(url) {
+  try {
+    const r = await fetch(encodeURI(url), { method: "HEAD", cache: "no-store" });
+    if (r.ok) return true;
+    if (r.status === 405 || r.status === 501) return (await fetch(encodeURI(url), { cache: "no-store" })).ok;
+  } catch (e) {}
+  return false;
+}
+async function buscarCarpeta(anios) {
+  const probadas = [];
+  for (const pre of PREFIJOS) for (const car of CARPETAS) for (const ext of EXTENSIONES) {
+    const ruta = (anio, mes) => `${pre}REM/${anio}/${car}/SA_${String(mes).padStart(2, "0")}${ext}`;
+    probadas.push(ruta("&lt;año&gt;", "01").replace("SA_01", "SA_xx"));
+    for (const anio of anios) {
+      const hay = await Promise.all(Array.from({ length: 12 }, (_, i) => existe(ruta(anio, i + 1))));
+      if (hay.some(Boolean)) return { ruta, probadas };
+    }
+  }
+  return { ruta: null, probadas };
+}
+
+async function cargar() {
+  const aviso = $("aviso");
+  const hoy = new Date().getFullYear();
+
+  if (location.protocol === "file:") {
+    aviso.classList.add("error");
+    aviso.innerHTML = "La página está abierta con doble clic (la dirección empieza con <b>file://</b>). " +
+      "Así el navegador bloquea la lectura de los REM.<br><small>Ábrela desde el servidor de la página " +
+      "(la dirección debe empezar con http:// o https://).</small>";
+    return;
+  }
+
+  aviso.textContent = "Buscando los archivos REM…";
+  const anios = []; for (let a = hoy; a >= ANIO_DESDE; a--) anios.push(a);
+  const { ruta, probadas } = await buscarCarpeta(anios);
+  if (!ruta) {
+    aviso.classList.add("error");
+    aviso.innerHTML = "No se encontraron los archivos SA_01 … SA_12. Rutas probadas (relativas a esta página):" +
+      "<br><small>" + probadas.join("<br>") + "</small>";
+    return;
+  }
+  RUTA_REM = ruta;
+  aviso.textContent = "Cargando REM A09…";
+
+  const tareas = [];
+  for (let anio = ANIO_DESDE; anio <= hoy; anio++) for (let mes = 1; mes <= 12; mes++) {
+    tareas.push((async () => {
+      try {
+        const r = await fetch(encodeURI(RUTA_REM(anio, mes)) + "?v=" + Date.now(), { cache: "no-store" });
+        if (!r.ok) return null;
+        const wb = XLSX.read(await r.arrayBuffer(), { type: "array", sheets: [HOJA] });
+        const esp = leerA09(wb);
+        return esp ? { anio, mes, esp } : null;
+      } catch (e) { return null; }
+    })());
+  }
+  datos = (await Promise.all(tareas)).filter(Boolean);
+
+  if (!datos.length) {
+    aviso.classList.add("error");
+    aviso.innerHTML = `Se encontraron archivos en <b>${RUTA_REM("&lt;año&gt;", "xx")}</b>, pero ninguno trae la hoja ` +
+      `<b>${HOJA}</b> con la Sección I. Revisa que sean los REM SA correctos.`;
+    return;
+  }
+  aviso.hidden = true;
+  llenarFiltros();
+  actualizar();
+}
+
+/* ---------- filtros ---------- */
+function llenarFiltros() {
+  const anios = [...new Set(datos.map(d => d.anio))].sort((a, b) => b - a);
+  $("fAnio").innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join("");
+  $("fAnio").value = anios[0];
+  llenarMeses();
+}
+function llenarMeses() {
+  const previo = $("fMes").value;
+  const meses = datos.filter(d => d.anio == $("fAnio").value).map(d => d.mes).sort((a, b) => a - b);
+  $("fMes").innerHTML = '<option value="">Todos (acumulado)</option>' +
+    meses.map(m => `<option value="${m}">${MESES[m - 1]}</option>`).join("");
+  if (meses.includes(Number(previo))) $("fMes").value = previo;
+}
+$("fAnio").addEventListener("change", () => { llenarMeses(); actualizar(); });
+$("fMes").addEventListener("change", actualizar);
+
+/* ---------- gráficos (se adaptan al ancho de la pantalla) ---------- */
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = '"Roboto", Arial, sans-serif';
+Chart.defaults.color = "#5f6b7a";
+const tam = (ctx, chico, grande) => { const w = ctx.chart.width || 800; return w < 420 ? chico : w < 700 ? Math.round((chico + grande) / 2) : grande; };
+const fuenteEje   = ctx => ({ size: tam(ctx, 10, 13), weight: "500" });
+const fuenteValor = ctx => ({ size: tam(ctx, 9, 12), weight: "600" });
+const tooltip = {
+  backgroundColor: "#0a132d", titleColor: "#fff", bodyColor: "#e8f1fa", padding: 10, cornerRadius: 8,
+  callbacks: {
+    title: items => String(items[0].label).replace(/,/g, " "),
+    label: ctx => ` ${ctx.dataset.label}: ${num(ctx.raw)}`
+  }
+};
+const leyenda = { position: "top", align: "center",
+  labels: { usePointStyle: true, pointStyle: "rectRounded", color: "#0a132d", font: fuenteEje } };
+const ejeValores = { beginAtZero: true, grace: "12%", ticks: { callback: v => num(v), font: fuenteEje, precision: 0 },
+                     grid: { color: "#dde3ea" }, border: { display: false } };
+/* Etiquetas de especialidad en varias líneas según el ancho */
+const etiquetaEsp = function (v) {
+  const t = this.getLabelForValue(v), w = this.chart.width;
+  return w < 520 ? t.replace("Rehabilitación: ", "Rehab. ").split(" ") : t.replace(": ", ":\n").split("\n");
+};
+
+/* Barras agrupadas por especialidad (solo valores sobre las barras) */
+function barrasPorEspecialidad(id, series) {
+  return new Chart($(id), {
+    type: "bar",
+    data: { labels: ESPECIALIDADES.map(e => e.nombre),
+            datasets: series.map(([label, color]) => ({ label, data: [], backgroundColor: color, borderRadius: 6, maxBarThickness: 64 })) },
+    options: {
+      responsive: true, maintainAspectRatio: false, resizeDelay: 100,
+      plugins: {
+        legend: leyenda, tooltip,
+        datalabels: { anchor: "end", align: "end", offset: 2, clamp: true, color: "#0a132d", font: fuenteValor,
+                      formatter: v => num(v), display: ctx => Number(ctx.dataset.data[ctx.dataIndex]) > 0 }
+      },
+      scales: { y: ejeValores,
+                x: { grid: { display: false }, ticks: { color: "#0a132d", font: fuenteEje, autoSkip: false, maxRotation: 0, callback: etiquetaEsp } } }
+    }
+  });
+}
+
+const gProduccion = barrasPorEspecialidad("gProduccion", [
+  ["Consulta nueva", COLOR.marino], ["Control", COLOR.azul], ["Ingreso a tratamiento", COLOR.gris], ["Altas de tratamiento", COLOR.rojo]
+]);
+const gCalidad = barrasPorEspecialidad("gCalidad", [
+  ["Inasistentes", COLOR.rojo], ["Consultas pertinentes", COLOR.azul]
+]);
+
+/* Líneas: consultas (nuevas + controles) de cada especialidad, mes a mes del año elegido */
+const gMensual = new Chart($("gMensual"), {
+  type: "line",
+  data: { labels: [], datasets: ESPECIALIDADES.map((e, i) => ({
+    label: e.nombre, data: [], borderColor: COLOR_ESP[i], backgroundColor: COLOR_ESP[i],
+    borderWidth: 3, tension: 0.25, pointRadius: 4, pointHoverRadius: 6 })) },
+  options: {
+    responsive: true, maintainAspectRatio: false, resizeDelay: 100,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: leyenda, tooltip,
+      datalabels: { display: ctx => ctx.chart.width >= 700, align: "top", offset: 4, color: ctx => ctx.dataset.borderColor,
+                    font: fuenteValor, formatter: v => num(v) }
+    },
+    scales: { y: ejeValores, x: { grid: { display: false }, ticks: { color: "#0a132d", font: fuenteEje } } }
+  }
+});
+const graficos = [gProduccion, gCalidad, gMensual];
+
+/* Vuelve a medir los gráficos cuando cambia el tamaño de la página */
+function ajustarGraficos() { requestAnimationFrame(() => graficos.forEach(g => g.resize())); }
+document.querySelectorAll(".chart-box").forEach(c => new ResizeObserver(ajustarGraficos).observe(c));
+window.addEventListener("load", ajustarGraficos);
+if (document.fonts) document.fonts.ready.then(ajustarGraficos);
+document.querySelectorAll("details").forEach(d => d.addEventListener("toggle", ajustarGraficos));
+
+/* ---------- sumas ---------- */
+function sumar(lista) {
+  const t = Object.fromEntries(ESPECIALIDADES.map(e => [e.nombre, vacio()]));
+  for (const d of lista) for (const e of ESPECIALIDADES)
+    for (const k in t[e.nombre]) t[e.nombre][k] += d.esp[e.nombre][k];
+  return t;
+}
+const total = t => Object.values(t).reduce((s, e) => { for (const k in e) s[k] += e[k]; return s; }, vacio());
+/* % inasistencia = inasistentes ÷ (consultas nuevas + controles + inasistentes)
+   % pertinencia  = consultas pertinentes ÷ consultas nuevas */
+const pctInas = e => pct(e.inas, e.nueva + e.control + e.inas);
+const pctPert = e => pct(e.pert, e.nueva);
+
+/* ---------- actualizar todo según los filtros ---------- */
+function actualizar() {
+  const anio = $("fAnio").value, mes = $("fMes").value;
+  const delAnio = datos.filter(d => d.anio == anio).sort((a, b) => a.mes - b.mes);
+  const t = sumar(delAnio.filter(d => !mes || d.mes == mes));
+  const tt = total(t);
+  const porEsp = campo => ESPECIALIDADES.map(e => t[e.nombre][campo]);
+
+  /* producción */
+  $("kNueva").textContent = num(tt.nueva);
+  $("kControl").textContent = num(tt.control);
+  $("kIngreso").textContent = num(tt.ingreso);
+  $("kAlta").textContent = num(tt.alta);
+  ["nueva", "control", "ingreso", "alta"].forEach((c, i) => gProduccion.data.datasets[i].data = porEsp(c));
+  gProduccion.update();
+
+  /* inasistentes y pertinencia */
+  $("kInas").textContent = num(tt.inas);
+  $("kPctInas").textContent = pctInas(tt);
+  $("kPert").textContent = num(tt.pert);
+  $("kPctPert").textContent = pctPert(tt);
+  gCalidad.data.datasets[0].data = porEsp("inas");
+  gCalidad.data.datasets[1].data = porEsp("pert");
+  gCalidad.update();
+
+  /* evolución mensual (todos los meses del año elegido) */
+  gMensual.data.labels = delAnio.map(d => MESES_CORTOS[d.mes - 1]);
+  ESPECIALIDADES.forEach((e, i) => {
+    gMensual.data.datasets[i].data = delAnio.map(d => d.esp[e.nombre].nueva + d.esp[e.nombre].control);
+    /* el mes elegido se marca con un punto más grande */
+    gMensual.data.datasets[i].pointRadius = delAnio.map(d => mes && d.mes == mes ? 8 : 4);
+  });
+  gMensual.update();
+
+  ajustarGraficos();
+
+  /* tabla por especialidad */
+  const filaEsp = (nombre, e) => `<tr><td>${nombre}</td><td>${num(e.nueva)}</td><td>${num(e.control)}</td>
+    <td>${num(e.ingreso)}</td><td>${num(e.alta)}</td><td>${num(e.inas)}</td><td>${pctInas(e)}</td>
+    <td>${num(e.pert)}</td><td>${pctPert(e)}</td></tr>`;
+  $("tEsp").innerHTML =
+    `<thead><tr><th>Especialidad</th><th>Consulta<br>nueva</th><th>Control</th><th>Ingreso a<br>tratamiento</th>
+       <th>Altas de<br>tratamiento</th><th>Inasis&shy;tentes</th><th>%<br>inasist.</th><th>Consultas<br>pertinentes</th><th>%<br>pertin.</th></tr></thead>
+     <tbody>${ESPECIALIDADES.map(e => filaEsp(e.nombre, t[e.nombre])).join("")}</tbody>
+     <tfoot>${filaEsp("Total", tt)}</tfoot>`;
+
+  /* tabla por mes: consultas (nuevas + controles) de cada especialidad */
+  const filaMes = (nombre, valores) => `<tr><td>${nombre}</td>${valores.map(v => `<td>${num(v)}</td>`).join("")}
+    <td><b>${num(valores.reduce((a, b) => a + b, 0))}</b></td></tr>`;
+  const consultas = d => ESPECIALIDADES.map(e => d.esp[e.nombre].nueva + d.esp[e.nombre].control);
+  const totAnio = ESPECIALIDADES.map((_, i) => delAnio.reduce((s, d) => s + consultas(d)[i], 0));
+  $("tMes").innerHTML =
+    `<thead><tr><th>Mes</th>${ESPECIALIDADES.map(e => `<th>${e.nombre}</th>`).join("")}<th>Total</th></tr></thead>
+     <tbody>${delAnio.map(d => filaMes(MESES[d.mes - 1], consultas(d))).join("")}</tbody>
+     <tfoot>${filaMes("Total " + anio, totAnio)}</tfoot>`;
+}
+
+cargar();
+</script>
+</body>
+</html>
