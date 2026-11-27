@@ -38,7 +38,7 @@
     { clave: "pabellon",   texto: "Pabellón",              href: "pabellon.html",            icono: "pabellon" },
     { clave: "cerrada",    texto: "Atención Cerrada",      href: "atencion-cerrada.html",    icono: "cerrada" },
     { clave: "medica",     texto: "Ambulatorio Médica",    href: "produccion-medica.html",   icono: "medica" },
-    { clave: "nomedica",   texto: "Ambulatorio no Médica", href: "produccion-no-medica.html", icono: "nomedica", pronto: true },
+    { clave: "nomedica",   texto: "Ambulatorio no Médica", href: "produccion-no-medica.html", icono: "nomedica" },
     { clave: "dental",     texto: "Odontología",           href: "produccion-dental.html",   icono: "dental" },
     { clave: "laboratorio", texto: "Laboratorio",          href: "laboratorio.html",         icono: "laboratorio" },
     { clave: "imagenologia", texto: "Imagenología",        href: "imagenologia.html",        icono: "imagenologia" }
