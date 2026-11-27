@@ -3,93 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ambulatorio no Médica | Unidad de Estadística</title>
+  <title>Ambulatorio no Médica | Unidad de Estadística · Hospital San Luis de Buin-Paine</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
-
-  <style>
-    .construccion {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 70vh;
-      text-align: center;
-      padding: 40px 20px;
-      background-color: #f4f6f9;
-    }
-
-    .construccion-caja {
-      background-color: #ffffff;
-      max-width: 600px;
-      width: 100%;
-      padding: 50px 40px;
-      border-radius: 10px;
-      border-top: 6px solid #0f69b4;
-      box-shadow: 0 4px 14px rgba(10, 19, 45, 0.08);
-    }
-
-    .construccion-icono {
-      font-size: 4rem;
-      margin-bottom: 15px;
-    }
-
-    .construccion h1 {
-      color: #0a132d;
-      font-size: 2rem;
-      margin-bottom: 10px;
-    }
-
-    .construccion h2 {
-      color: #0f69b4;
-      font-size: 1.3rem;
-      font-weight: 500;
-      margin-bottom: 20px;
-      padding-bottom: 0;
-    }
-
-    .construccion h2::after {
-      display: none;
-    }
-
-    .construccion p {
-      color: #5f6b7a;
-      font-size: 1.1rem;
-      margin-bottom: 30px;
-    }
-
-    .boton-volver {
-      display: inline-block;
-      padding: 12px 28px;
-      background-color: #0f69b4;
-      color: #ffffff;
-      text-decoration: none;
-      font-weight: 500;
-      border-radius: 8px;
-      transition: background-color 0.2s;
-    }
-
-    .boton-volver:hover {
-      background-color: #0a4f8a;
-    }
-  </style>
 </head>
-<body>
+<body data-pagina="nomedica">
 
-  <div class="barra-gobierno">
-    <span class="azul"></span>
-    <span class="rojo"></span>
-  </div>
-
-  <section class="construccion">
-    <div class="construccion-caja">
-      <div class="construccion-icono">🚧</div>
-      <h1>Ambulatorio no Médica</h1>
-      <h2>Página en construcción</h2>
-      <p>Estamos trabajando en esta sección. Pronto estará disponible la información.</p>
-      <a href="index.html" class="boton-volver">← Volver al inicio</a>
+  <section class="cabecera-pagina">
+    <div class="contenedor cabecera-fila">
+      <span class="cabecera-icono" data-icono="nomedica"></span>
+      <div class="cabecera-texto">
+        <h1>Ambulatorio no Médica</h1>
+      </div>
     </div>
+    <div class="acento"></div>
   </section>
 
+  <main class="contenido">
+    <div class="contenedor">
+      <section class="tarjeta en-preparacion">
+        <span class="modulo-icono" data-icono="nomedica" data-tam="30"></span>
+        <h2>Esta sección está en preparación</h2>
+        <p>Pronto podrás ver aquí las atenciones de profesionales no médicos. Mientras tanto, revisa las otras áreas de producción.</p>
+        <div class="acciones">
+          <a href="index.html#Produccion" class="boton-accion">Volver a Producción</a>
+          <a href="produccion-medica.html" class="boton-accion">Ambulatorio Médica</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+<script src="comun.js"></script>
 </body>
 </html>
-

@@ -3,162 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Manuales | Unidad de Estadística</title>
+  <title>Manuales e instructivos | Unidad de Estadística · Hospital San Luis de Buin-Paine</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
-
-  <!-- Solo los estilos propios de esta página; el resto viene de estilos.css -->
-  <style>
-    /* Portada más baja en esta página: solo tiene un título y un botón */
-    .portada {
-      min-height: clamp(180px, 32vh, 420px);
-    }
-
-    .lista-manuales {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-      gap: clamp(12px, 1.5vw, 24px);
-    }
-
-    .manual {
-      display: flex;
-      align-items: center;
-      gap: clamp(10px, 1.2vw, 18px);
-      background-color: var(--blanco, #ffffff);
-      padding: clamp(14px, 1.6vw, 24px) clamp(14px, 1.8vw, 26px);
-      border-radius: var(--radio, 8px);
-      border-bottom: 3px solid var(--rojo, #eb3c46);
-      box-shadow: var(--sombra, 0 4px 14px rgba(10, 19, 45, 0.08));
-      text-decoration: none;
-      min-width: 0;
-      transition: transform 0.2s, background-color 0.2s;
-    }
-
-    /* El efecto al pasar el mouse solo en equipos con mouse (en celular no queda "pegado") */
-    @media (hover: hover) {
-      .manual:hover {
-        background-color: var(--azul-claro, #e8f1fa);
-        transform: translateY(-3px);
-      }
-    }
-
-    /* Al navegar con teclado se ve qué manual está seleccionado */
-    .manual:focus-visible {
-      outline: 3px solid var(--azul, #0f69b4);
-      outline-offset: 3px;
-    }
-
-    .manual-icono {
-      font-size: clamp(1.6rem, 1.2rem + 1vw, 2.4rem);
-      flex-shrink: 0;
-    }
-
-    .manual-texto {
-      min-width: 0;
-      overflow-wrap: anywhere;
-    }
-
-    .manual-texto strong {
-      display: block;
-      color: var(--azul-marino, #0a132d);
-      font-weight: 500;
-      font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.15rem);
-    }
-
-    .manual-texto small {
-      color: var(--texto-suave, #5f6b7a);
-      font-size: clamp(0.8rem, 0.75rem + 0.2vw, 0.95rem);
-    }
-
-    /* Pantallas muy grandes: tarjetas más anchas para que no se vean diminutas */
-    @media (min-width: 1800px) {
-      .lista-manuales {
-        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-      }
-    }
-
-    /* Celular: tarjetas un poco más altas para tocarlas fácil con el dedo */
-    @media (max-width: 700px) {
-      .manual {
-        min-height: 64px;
-      }
-    }
-  </style>
 </head>
-<body>
+<body data-pagina="manuales">
 
-  <div class="barra-gobierno">
-    <span class="azul"></span>
-    <span class="rojo"></span>
-  </div>
+  <section class="cabecera-pagina">
+    <div class="contenedor cabecera-fila">
+      <span class="cabecera-icono" data-icono="documento"></span>
+      <div class="cabecera-texto">
+        <h1>Manuales e instructivos</h1>
+      </div>
+    </div>
+    <div class="acento"></div>
+  </section>
 
-  <header class="encabezado">
-    <div class="contenedor encabezado-fila">
-      <a href="index.html" class="marca">
-        <div class="marca-texto">
-          <span class="marca-red">Servicio de Salud Metropolitano Sur</span>
-          <strong>Hospital San Luis de Buin-Paine</strong>
-          <span class="marca-unidad">Unidad de Estadística</span>
+  <main class="contenido">
+    <div class="contenedor">
+
+      <section class="tarjeta filtros">
+        <div class="buscador">
+          <span data-icono="buscar" data-tam="18"></span>
+          <input type="search" id="buscar" placeholder="Buscar manual o instructivo" aria-label="Buscar manual">
         </div>
-      </a>
-      <nav class="menu">
-        <a href="index.html">Inicio</a>
-        <a href="manuales.html">Manuales</a>
-        <a href="index.html#nosotros">Nosotros</a>
-        <a href="index.html#contacto">Contacto</a>
-      </nav>
-    </div>
-  </header>
+      </section>
 
-  <!-- Misma portada que la página de inicio -->
-  <section class="portada">
-    <div class="contenedor">
-      <h1>Manuales e Instructivos</h1>
-      <div class="botones">
-        <a href="index.html" class="boton">← Volver al inicio</a>
+      <!-- PARA AGREGAR UN MANUAL: copia un bloque <article class="tarjeta manual"> y cambia el título,
+           la descripción, el tema (data-tema) y la ruta del PDF (en los dos enlaces) -->
+      <div class="lista-manuales" id="lista">
+
+        <article class="tarjeta manual" data-tema="REM">
+          <div class="manual-cabeza">
+            <span class="manual-icono" data-icono="documento" data-tam="24"></span>
+            <div><span class="chip">REM</span><strong>Manual REM Serie A y BS 2026</strong><p>Instrucciones de llenado de los Resúmenes Estadísticos Mensuales.</p></div>
+          </div>
+          <div class="manual-pie">
+            <small class="peso">PDF</small>
+            <div class="acciones">
+              <a class="boton-accion" href="manuales/manual-rem-serie-a-bs-2026.pdf" target="_blank" rel="noopener"><span data-icono="ver" data-tam="18"></span>Ver</a>
+              <a class="boton-accion" href="manuales/manual-rem-serie-a-bs-2026.pdf" download><span data-icono="descargar" data-tam="18"></span>Descargar</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="tarjeta manual" data-tema="Egresos">
+          <div class="manual-cabeza">
+            <span class="manual-icono" data-icono="documento" data-tam="24"></span>
+            <div><span class="chip">Egresos</span><strong>Manual de Egresos Hospitalarios</strong><p>Registro y codificación del egreso hospitalario.</p></div>
+          </div>
+          <div class="manual-pie">
+            <small class="peso">PDF</small>
+            <div class="acciones">
+              <a class="boton-accion" href="manuales/Manual-Egreso-Hospitalario.pdf" target="_blank" rel="noopener"><span data-icono="ver" data-tam="18"></span>Ver</a>
+              <a class="boton-accion" href="manuales/Manual-Egreso-Hospitalario.pdf" download><span data-icono="descargar" data-tam="18"></span>Descargar</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="tarjeta manual" data-tema="Lista de espera">
+          <div class="manual-cabeza">
+            <span class="manual-icono" data-icono="documento" data-tam="24"></span>
+            <div><span class="chip">Lista de espera</span><strong>Manual Registro LE No GES</strong><p>Registro de la lista de espera no GES.</p></div>
+          </div>
+          <div class="manual-pie">
+            <small class="peso">PDF</small>
+            <div class="acciones">
+              <a class="boton-accion" href="manuales/Manual-Registro-LE-No-GES.pdf" target="_blank" rel="noopener"><span data-icono="ver" data-tam="18"></span>Ver</a>
+              <a class="boton-accion" href="manuales/Manual-Registro-LE-No-GES.pdf" download><span data-icono="descargar" data-tam="18"></span>Descargar</a>
+            </div>
+          </div>
+        </article>
+
       </div>
+      <p class="sin-resultados" id="sinResultados" hidden>No hay manuales que coincidan con la búsqueda.</p>
+
     </div>
-  </section>
+  </main>
 
-  <section class="fondo-gris">
-    <div class="contenedor">
-      <h2>Documentos disponibles</h2>
+<script src="comun.js"></script>
+<script>
+/* Buscador: filtra por título, descripción y tema */
+const manuales = [...document.querySelectorAll(".manual")];
+document.getElementById("buscar").addEventListener("input", e => {
+  const q = U.norm(e.target.value);
+  let visibles = 0;
+  manuales.forEach(m => { const si = !q || U.norm(m.textContent).includes(q); m.hidden = !si; if (si) visibles++; });
+  document.getElementById("sinResultados").hidden = visibles > 0;
+});
 
-      <div class="lista-manuales">
-        <a href="manuales/manual-rem-serie-a-bs-2026.pdf" class="manual" target="_blank">
-          <span class="manual-icono">📄</span>
-          <span class="manual-texto">
-            <strong>Manual REM Serie A, BS 2026</strong>
-            <small>PDF · Ver documento</small>
-          </span>
-        </a>
-
-        <a href="manuales/Manual-Egreso-Hospitalario.pdf" class="manual" target="_blank">
-          <span class="manual-icono">📄</span>
-          <span class="manual-texto">
-            <strong>Manual de Egresos Hospitalarios</strong>
-            <small>PDF · Ver documento</small>
-          </span>
-        </a>
-
-        <a href="manuales/Manual-Registro-LE-No-GES.pdf" class="manual" download>
-          <span class="manual-icono">📝</span>
-          <span class="manual-texto">
-            <strong>Manual Registro LE No GES</strong>
-            <small>PDF · Descargar</small>
-          </span>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <footer class="pie">
-    <div class="contenedor">
-      <strong>Hospital San Luis de Buin-Paine</strong>
-      <p>Unidad de Estadística · Servicio de Salud Metropolitano Sur</p>
-      <p class="pie-nota">Datos agregados. No contiene información de pacientes.</p>
-    </div>
-  </footer>
-
+/* Tamaño de cada PDF (se pregunta al servidor; si no responde, queda solo "PDF") */
+if (location.protocol !== "file:") manuales.forEach(async m => {
+  const url = m.querySelector("a[download]").getAttribute("href");
+  try {
+    const r = await fetch(encodeURI(url), { method: "HEAD" });
+    const b = Number(r.headers.get("content-length"));
+    if (r.ok && b) m.querySelector(".peso").textContent = `PDF · ${U.dec(b / 1048576, 1)} MB`;
+  } catch (e) { /* sin tamaño */ }
+});
+</script>
 </body>
 </html>

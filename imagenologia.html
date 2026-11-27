@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Imagenología | Unidad de Estadística · Hospital San Luis de Buin-Paine</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body data-pagina="imagenologia" class="cargando">
+
+  <section class="cabecera-pagina">
+    <div class="contenedor cabecera-fila">
+      <span class="cabecera-icono" data-icono="imagenologia"></span>
+      <div class="cabecera-texto">
+        <h1>Exámenes de imagenología</h1>
+      </div>
+    </div>
+    <div class="acento"></div>
+  </section>
+
+  <main class="contenido">
+    <div class="contenedor">
+
+      <div id="aviso" class="aviso">Cargando REM B17…</div>
+
+      <!-- FILTROS -->
+      <section class="tarjeta filtros">
+        <div class="filtros-campos">
+          <label for="fAnio">Año<select id="fAnio"></select></label>
+          <label for="fMes">Mes<select id="fMes"></select></label>
+        </div>
+        <div class="acciones">
+          <button type="button" class="boton-accion" data-exportar><span data-icono="descargar" data-tam="18"></span>Descargar Excel</button>
+          <button type="button" class="boton-accion" data-imprimir><span data-icono="imprimir" data-tam="18"></span>Imprimir</button>
+        </div>
+      </section>
+
+      <!-- KPIs por procedencia -->
+      <section class="kpis" aria-live="polite">
+        <div class="kpi destacado"><span>Total imagenología</span><b id="kTotal">–</b><div class="kpi-pie"><small id="kTotalD">&nbsp;</small><svg class="spark" id="sTotal"></svg></div></div>
+        <div class="kpi rojo"><span>Emergencia</span><b id="kEmergencia">–</b><div class="kpi-pie"><small id="kEmergenciaPct">&nbsp;</small><svg class="spark" id="sEmergencia"></svg></div></div>
+        <div class="kpi marino"><span>Atención cerrada</span><b id="kCerrada">–</b><div class="kpi-pie"><small id="kCerradaPct">&nbsp;</small><svg class="spark" id="sCerrada"></svg></div></div>
+        <div class="kpi"><span>Atención abierta</span><b id="kAbierta">–</b><div class="kpi-pie"><small id="kAbiertaPct">&nbsp;</small><svg class="spark" id="sAbierta"></svg></div></div>
+      </section>
+
+      <!-- EVOLUCIÓN MENSUAL -->
+      <article class="tarjeta">
+        <h2>Evolución mensual por procedencia</h2>
+        <p class="sub">Todos los meses del año elegido · el mes elegido se marca más grande</p>
+        <div class="chart-box bajo"><canvas id="gMensual"></canvas></div>
+        <details>
+          <summary>Ver detalle por mes</summary>
+          <div class="scroll"><table id="tMes"></table></div>
+        </details>
+      </article>
+
+      <!-- POR TIPO DE EXAMEN Y PROCEDENCIA -->
+      <article class="tarjeta">
+        <h2>Exámenes por tipo y procedencia</h2>
+        <p class="sub" id="subTipos">&nbsp;</p>
+        <div class="chart-box" id="cajaTipos"><canvas id="gTipos"></canvas></div>
+        <details>
+          <summary>Ver detalle por tipo de examen</summary>
+          <div class="scroll"><table id="tTipos"></table></div>
+        </details>
+      </article>
+
+      <div class="dos-columnas">
+        <!-- POR PROCEDENCIA -->
+        <article class="tarjeta">
+          <h2>Exámenes según procedencia</h2>
+          <div class="chart-box bajo"><canvas id="gProcedencia"></canvas></div>
+        </article>
+        <!-- ULTRASONOGRAFÍA -->
+        <article class="tarjeta">
+          <h2>Ultrasonografía</h2>
+          <div class="kpis tres">
+            <div class="kpi marino"><span>Ecotomografías (sin obstétricas ni abdominales)</span><b id="kEcoGen">–</b></div>
+            <div class="kpi"><span>Ecografías obstétricas</span><b id="kEcoObs">–</b></div>
+            <div class="kpi rojo"><span>Ecotomografías abdominales</span><b id="kEcoAbd">–</b></div>
+          </div>
+          <div class="chart-box bajo"><canvas id="gEco"></canvas></div>
+        </article>
+      </div>
+
+    </div>
+  </main>
+
+<script src="comun.js"></script>
+<script>
+/* =====================================================================
+   DATOS: REM SBS, hoja B17 Sección I, bloque imagenología
+          (desde "TOTAL EXAMENES IMAGENOLOGIA" hasta "Toma de Muestras")
+          → REM/<año>/REM_BS/SBS_01_26.xlsm …
+   ===================================================================== */
+const HOJA = "B17";
+/* Tipos de examen (se buscan por el comienzo de su nombre) */
+const TIPOS = [
+  { clave: "rxs",   rem: "EX. RADIOLOGICOS SIMPLES",   nombre: "Ex. radiológicos simples" },
+  { clave: "rxc",   rem: "EX. RADIOLOGICOS COMPLEJOS", nombre: "Ex. radiológicos complejos" },
+  { clave: "tac",   rem: "TOMOGRAFIA AXIAL",           nombre: "Tomografía axial computarizada" },
+  { clave: "eco",   rem: "ULTRASONOGRAFIA",            nombre: "Ultrasonografía" },
+  { clave: "rm",    rem: "RESONANCIA MAGNETICA",       nombre: "Resonancia magnética" },
+  { clave: "otros", rem: "OTROS EXAMENES DE IMAGENES", nombre: "Otros exámenes de imágenes" }
+];
+/* Detalle de la ultrasonografía */
+const ECO = [
+  { clave: "gen", rem: "ECOTOMOGRAFIAS (",         nombre: "Ecotomografías (sin obstétricas ni abdominales)", corto: ["Ecotomografías", "(sin obstétricas", "ni abdominales)"] },
+  { clave: "obs", rem: "ECOGRAFIAS OBSTETRICAS",   nombre: "Ecografías obstétricas", corto: ["Ecografías", "obstétricas"] },
+  { clave: "abd", rem: "ECOTOMOGRAFIAS ABDOMINAL", nombre: "Ecotomografías abdominales", corto: ["Ecotomografías", "abdominales"] }
+];
+const PROCEDENCIAS = [{ clave: "c", nombre: "Atención cerrada" }, { clave: "a", nombre: "Atención abierta" }, { clave: "e", nombre: "Emergencia" }];
+const { $, norm, n, num, pct, MESES, MESES_CORTOS, COLOR, graf } = U;
+const COLOR_PROC = [COLOR.marino, COLOR.azul, COLOR.rojo];
+const cero = () => ({ t: 0, c: 0, a: 0, e: 0 });
+let datos = [];
+
+/* ---------- lectura de la hoja B17, bloque imagenología ---------- */
+function leerB17(wb) {
+  const hoja = wb.Sheets[HOJA];
+  if (!hoja) return null;
+  const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: "", raw: true });
+  const ini = filas.findIndex(f => /^SECCION I[\s:]/.test(norm(f[0])) && norm(f[0]).includes("EXAMENES"));
+  if (ini < 0) return null;
+  const desde = filas.findIndex((f, i) => i > ini && norm(f[0]).startsWith("TOTAL EXAMENES IMAGENOLOGIA"));
+  if (desde < 0) return null;
+  let fin = filas.findIndex((f, i) => i > desde && (norm(f[0]).startsWith("TOMA DE MUESTRAS") || /^SECCION [J-Z]/.test(norm(f[0]))));
+  if (fin < 0) fin = Math.min(filas.length, desde + 20);
+  const columna = (texto, porDefecto) => {
+    for (let i = ini + 1; i <= ini + 3; i++) { const c = (filas[i] || []).findIndex(v => norm(v) === texto); if (c >= 0) return c; }
+    return porDefecto;
+  };
+  const col = { t: columna("TOTAL", 2), c: columna("ATENCION CERRADA", 7), a: columna("ATENCION ABIERTA", 8), e: columna("EMERGENCIA", 9) };
+  const valores = f => ({ t: n(f[col.t]), c: n(f[col.c]), a: n(f[col.a]), e: n(f[col.e]) });
+  const res = { total: cero(), tipos: {}, eco: {} };
+  TIPOS.forEach(x => res.tipos[x.clave] = cero());
+  ECO.forEach(x => res.eco[x.clave] = cero());
+  let hayTotal = false;
+  for (const f of filas.slice(desde, fin)) {
+    const etiqueta = norm(f[1]) || norm(f[0]);
+    if (!etiqueta) continue;
+    if (etiqueta.startsWith("TOTAL EXAMENES IMAGENOLOGIA")) { res.total = valores(f); hayTotal = true; continue; }
+    const tipo = TIPOS.find(x => etiqueta.startsWith(x.rem));
+    if (tipo) { res.tipos[tipo.clave] = valores(f); continue; }
+    const eco = ECO.find(x => etiqueta.startsWith(x.rem));
+    if (eco) res.eco[eco.clave] = valores(f);
+  }
+  return hayTotal ? res : null;
+}
+
+/* ---------- gráficos ---------- */
+function barras(id, { labels = [], series, horizontal = false, mostrarLeyenda = true }) {
+  const valor = horizontal ? "x" : "y", cat = horizontal ? "y" : "x";
+  return new Chart($(id), {
+    type: "bar",
+    data: { labels, datasets: series.map(([label, color]) => ({ label, data: [], backgroundColor: color, borderRadius: 6, maxBarThickness: horizontal ? 30 : 90, categoryPercentage: 0.8, barPercentage: 0.92 })) },
+    options: {
+      indexAxis: horizontal ? "y" : "x", layout: { padding: { right: horizontal ? 10 : 0, top: 4 } },
+      plugins: { legend: { ...graf.leyenda, display: mostrarLeyenda }, tooltip: graf.tooltip, datalabels: graf.etiquetas },
+      scales: { [valor]: graf.ejeValores, [cat]: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje, autoSkip: false, maxRotation: 0 } } }
+    }
+  });
+}
+const gProcedencia = barras("gProcedencia", { labels: PROCEDENCIAS.map(p => p.nombre), series: [["Exámenes", COLOR_PROC]], mostrarLeyenda: false });
+const gTipos = barras("gTipos", { series: PROCEDENCIAS.map((p, i) => [p.nombre, COLOR_PROC[i]]), horizontal: true });
+const gEco = barras("gEco", { labels: ECO.map(m => m.corto), series: PROCEDENCIAS.map((p, i) => [p.nombre, COLOR_PROC[i]]) });
+const gMensual = new Chart($("gMensual"), {
+  type: "line",
+  data: { labels: [], datasets: [["Total imagenología", COLOR.gris], ...PROCEDENCIAS.map((p, i) => [p.nombre, COLOR_PROC[i]])]
+    .map(([label, color], i) => ({ label, data: [], borderColor: color, backgroundColor: color, borderWidth: i ? 3 : 2, borderDash: i ? [] : [6, 4], tension: 0.25, pointRadius: 4, pointHoverRadius: 7 })) },
+  options: {
+    interaction: { mode: "index", intersect: false },
+    plugins: { legend: graf.leyenda, tooltip: graf.tooltip,
+      datalabels: { display: ctx => ctx.chart.width >= 760 && ctx.datasetIndex === 0, align: "top", offset: 4, color: COLOR.gris, font: graf.fuenteValor, formatter: v => num(v) } },
+    scales: { y: graf.ejeValores, x: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje } } }
+  }
+});
+U.vigilarGraficos([gProcedencia, gTipos, gEco, gMensual]);
+let esperaResize;
+window.addEventListener("resize", () => { clearTimeout(esperaResize); esperaResize = setTimeout(() => { if (datos.length) actualizar(); }, 200); });
+
+/* ---------- sumas ---------- */
+const sumarA = (a, b) => { for (const k in a) a[k] += b[k]; return a; };
+function sumar(lista) {
+  const t = { total: cero(), tipos: {}, eco: {} };
+  TIPOS.forEach(x => t.tipos[x.clave] = cero());
+  ECO.forEach(x => t.eco[x.clave] = cero());
+  for (const d of lista) {
+    sumarA(t.total, d.total);
+    TIPOS.forEach(x => sumarA(t.tipos[x.clave], d.tipos[x.clave]));
+    ECO.forEach(x => sumarA(t.eco[x.clave], d.eco[x.clave]));
+  }
+  return t;
+}
+
+/* ---------- actualizar todo según los filtros ---------- */
+function actualizar() {
+  const anio = $("fAnio").value, mes = Number($("fMes").value) || 0;
+  const delAnio = datos.filter(d => d.anio == anio);
+  const t = sumar(delAnio.filter(d => !mes || d.mes == mes));
+  const ant = mes ? U.mesAnterior(anio, mes) : null;
+  const dAnt = ant ? datos.find(d => d.anio == ant.anio && d.mes == ant.mes) : null;
+  const vsAnt = ant ? ` vs ${MESES_CORTOS[ant.mes - 1].toLowerCase()}` : "";
+
+  /* KPIs */
+  U.animar("kTotal", t.total.t);
+  if (dAnt) U.variacion("kTotalD", t.total.t, dAnt.total.t, { texto: vsAnt }); else $("kTotalD").textContent = U.etiquetaPeriodo();
+  U.sparkline("sTotal", delAnio.map(d => d.total.t), "#ffffff");
+  [["c", "Cerrada", COLOR.marino], ["a", "Abierta", COLOR.azul], ["e", "Emergencia", COLOR.rojo]].forEach(([k, id, c]) => {
+    U.animar("k" + id, t.total[k]);
+    $("k" + id + "Pct").textContent = pct(t.total[k], t.total.t) + " del total";
+    U.sparkline("s" + id, delAnio.map(d => d.total[k]), c);
+  });
+  gProcedencia.data.datasets[0].data = PROCEDENCIAS.map(p => t.total[p.clave]);
+  gProcedencia.update();
+
+  /* por tipo: solo los que tienen exámenes, de mayor a menor */
+  const tipos = TIPOS.map(x => ({ ...x, v: t.tipos[x.clave] })).filter(x => x.v.t > 0).sort((a, b) => b.v.t - a.v.t);
+  const caja = $("cajaTipos"), angosto = caja.clientWidth < 600;
+  caja.style.height = Math.round(Math.min(Math.max(280, tipos.length * (angosto ? 84 : 66) + 90), Math.max(320, window.innerHeight - 250))) + "px";
+  $("subTipos").textContent = U.etiquetaPeriodo() + " · de mayor a menor";
+  gTipos.data.labels = tipos.map(x => U.partir(x.nombre, angosto ? 16 : 26));
+  PROCEDENCIAS.forEach((p, i) => gTipos.data.datasets[i].data = tipos.map(x => x.v[p.clave]));
+  gTipos.update();
+  const fila = (nombre, v, clase = "") => `<tr class="${clase}"><td>${nombre}</td><td class="col-total">${num(v.t)}</td><td>${num(v.c)}</td><td>${num(v.a)}</td><td>${num(v.e)}</td></tr>`;
+  $("tTipos").innerHTML = `<thead><tr><th>Tipo de examen</th><th>Total</th><th>Atención<br>cerrada</th><th>Atención<br>abierta</th><th>Emergencia</th></tr></thead>
+    <tbody>${TIPOS.map(x => fila(x.nombre, t.tipos[x.clave]) + (x.clave === "eco" ? ECO.map(m => fila(m.nombre, t.eco[m.clave], "sub")).join("") : "")).join("")}</tbody>
+    <tfoot>${fila("Total exámenes imagenología", t.total)}</tfoot>`;
+
+  /* ultrasonografía */
+  U.animar("kEcoGen", t.eco.gen.t); U.animar("kEcoObs", t.eco.obs.t); U.animar("kEcoAbd", t.eco.abd.t);
+  PROCEDENCIAS.forEach((p, i) => gEco.data.datasets[i].data = ECO.map(m => t.eco[m.clave][p.clave]));
+  gEco.update();
+
+  /* evolución mensual */
+  gMensual.data.labels = delAnio.map(d => MESES_CORTOS[d.mes - 1]);
+  ["t", "c", "a", "e"].forEach((k, i) => {
+    gMensual.data.datasets[i].data = delAnio.map(d => d.total[k]);
+    gMensual.data.datasets[i].pointRadius = delAnio.map(d => mes && d.mes == mes ? 8 : 4);
+  });
+  gMensual.update();
+  $("tMes").innerHTML = `<thead><tr><th>Mes</th><th>Total</th><th>Atención<br>cerrada</th><th>Atención<br>abierta</th><th>Emergencia</th></tr></thead>
+    <tbody>${delAnio.map(d => fila(MESES[d.mes - 1], d.total)).join("")}</tbody><tfoot>${fila("Total " + anio, sumar(delAnio).total)}</tfoot>`;
+}
+
+/* ---------- carga ---------- */
+async function cargar() {
+  if (U.avisoArchivoLocal()) return;
+  U.aviso("Buscando los archivos REM SBS…", { progreso: true });
+  const rem = await U.cargarREM("SBS", HOJA, leerB17);
+  datos = rem.datos;
+  if (!rem.ruta) { U.aviso("No se encontraron los archivos SBS_01 … SBS_12 en la carpeta REM/&lt;año&gt;/REM_BS.", { error: true }); U.listo("Sin datos"); return; }
+  if (!datos.length) { U.aviso(`Se encontraron REM SBS, pero ninguno trae la hoja <b>${HOJA}</b> con el bloque de imagenología.`, { error: true }); U.listo("Sin datos"); return; }
+  U.ocultarAviso();
+  U.filtrosPeriodo(datos, actualizar);
+  actualizar();
+  const u = U.ultimoPeriodo(datos);
+  U.listo(U.textoActualizado(u.anio, u.mes));
+}
+cargar();
+</script>
+</body>
+</html>

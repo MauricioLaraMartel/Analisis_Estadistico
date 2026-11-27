@@ -4,153 +4,109 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Unidad de Estadística | Hospital San Luis de Buin-Paine</title>
+  <meta name="description" content="Panel estadístico de producción asistencial del Hospital San Luis de Buin-Paine.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
-
-  <!-- Estos estilos van después de estilos.css para que tengan prioridad -->
-  <style>
-    /* Todo lo que tenga el atributo "hidden" queda oculto de verdad
-       (sin esto, el display:flex de .portada le gana y la sección se sigue viendo) */
-    [hidden] { display: none !important; }
-
-    /* Portada: títulos y botones centrados.
-       El alto y el ancho fluidos vienen de estilos.css (se adaptan a cualquier pantalla). */
-    .portada {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
-
-    .portada .contenedor {
-      width: 100%;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    .portada .etiqueta,
-    .portada h1 {
-      margin-left: auto;
-      margin-right: auto;
-      text-align: center;
-    }
-
-    /* Al usar los enlaces del menú (#Produccion, #nosotros, #contacto)
-       la sección no queda tapada por el encabezado fijo */
-    section[id] { scroll-margin-top: 110px; }
-
-    /* Texto de "Nosotros": justificado en pantallas anchas;
-       en celular queda alineado a la izquierda (lo define estilos.css) */
-    @media (min-width: 701px) {
-      #nosotros p {
-        text-align: justify;
-        hyphens: auto;           /* corta palabras largas para evitar espacios grandes */
-        -webkit-hyphens: auto;
-      }
-    }
-
-    /* Contacto: correo y teléfono se pueden tocar en el celular */
-    #contacto a {
-      color: var(--azul);
-      text-decoration: none;
-      overflow-wrap: anywhere;   /* el correo largo no se sale de la pantalla */
-    }
-    @media (hover: hover) {
-      #contacto a:hover { text-decoration: underline; }
-    }
-
-    /* Celular: el encabezado es más alto (menú en 2 filas) */
-    @media (max-width: 700px) {
-      section[id] { scroll-margin-top: 200px; }
-    }
-    @media (max-width: 380px) {
-      section[id] { scroll-margin-top: 0; }   /* ahí el encabezado ya no es fijo */
-    }
-  </style>
 </head>
-<body>
+<body data-pagina="inicio">
+  <!-- El encabezado con el menú y el pie de página los agrega comun.js -->
 
-  <div class="barra-gobierno">
-    <span class="azul"></span>
-    <span class="rojo"></span>
+  <section class="portada">
+  <div class="contenedor portada-fila">
+    <div class="portada-texto">
+      <span class="etiqueta">Panel estadístico</span>
+      <h1>La actividad del hospital</h1>
+      <p>Producción asistencial y administrativa del Hospital San Luis de Buin-Paine, construida desde los REM y las bases locales.</p>
+      <div class="portada-botones">
+        <a href="#Produccion" class="boton-claro">Ver producción</a>
+        <a href="manuales.html" class="boton-borde">Manuales e instructivos</a>
+      </div>
+    </div>
   </div>
+  <div class="acento"></div>
+ </section>
 
-  <header class="encabezado">
-    <div class="contenedor encabezado-fila">
-      <a href="#" class="marca">
-        <div class="marca-texto">
-          <span class="marca-red">Servicio de Salud Metropolitano Sur</span>
-          <strong>Hospital San Luis de Buin-Paine</strong>
-          <span class="marca-unidad">Unidad de Estadística</span>
+  <main class="contenedor secciones-inicio">
+
+    <section id="Produccion">
+      <h2 class="titulo-seccion">Producción</h2>
+      <p class="bajada">Elige un área para ver sus indicadores, gráficos y tablas por mes.</p>
+      <div class="modulos">
+        <a href="urgencia.html" class="modulo">
+          <div class="modulo-cabeza"><span class="modulo-icono" data-icono="urgencia"></span><span class="modulo-flecha" data-icono="flecha" data-tam="20"></span></div>
+          <div><strong>Urgencia</strong><p>Demanda, atendidos, retiro sin alta, categorización C2 y demora de ingreso a cama.</p></div>
+          <span class="modulo-pie">Ver panel</span>
+        </a>
+        <a href="pabellon.html" class="modulo">
+          <div class="modulo-cabeza"><span class="modulo-icono" data-icono="pabellon"></span><span class="modulo-flecha" data-icono="flecha" data-tam="20"></span></div>
+          <div><strong>Pabellón</strong><p>Ocupación de quirófanos, suspensión de cirugías electivas e intervenciones.</p></div>
+          <span class="modulo-pie">Ver panel</span>
+        </a>
+        <a href="atencion-cerrada.html" class="modulo">
+          <div class="modulo-cabeza"><span class="modulo-icono" data-icono="cerrada"></span><span class="modulo-flecha" data-icono="flecha" data-tam="20"></span></div>
+          <div><strong>Atención Cerrada</strong><p>Índice ocupacional, egresos, días de estada y letalidad por área.</p></div>
+          <span class="modulo-pie">Ver panel</span>
+        </a>
+        <a href="produccion-medica.html" class="modulo">
+          <div class="modulo-cabeza"><span class="modulo-icono" data-icono="medica"></span><span class="modulo-flecha" data-icono="flecha" data-tam="20"></span></div>
+          <div><strong>Ambulatorio Médica</strong><p>Consultas de especialidad, origen, pertinencia, altas e inasistencia.</p></div>
+          <span class="modulo-pie">Ver panel</span>
+        </a>
+        <a href="produccion-no-medica.html" class="modulo pronto">
+          <div class="modulo-cabeza"><span class="modulo-icono" data-icono="nomedica"></span><span class="modulo-flecha" data-icono="flecha" data-tam="20"></span></div>
+          <div><strong>Ambulatorio no Médica</strong><p>Atenciones de profesionales no médicos.</p></div>
+          <span class="modulo-pie">En preparación</span>
+        </a>
+        <a href="produccion-dental.html" class="modulo">
+          <div class="modulo-cabeza"><span class="modulo-icono" data-icono="dental"></span><span class="modulo-flecha" data-icono="flecha" data-tam="20"></span></div>
+          <div><strong>Odontología</strong><p>Endodoncia, periodoncia y prótesis removible: consultas, ingresos y altas.</p></div>
+          <span class="modulo-pie">Ver panel</span>
+        </a>
+        <a href="laboratorio.html" class="modulo">
+          <div class="modulo-cabeza"><span class="modulo-icono" data-icono="laboratorio"></span><span class="modulo-flecha" data-icono="flecha" data-tam="20"></span></div>
+          <div><strong>Laboratorio</strong><p>Exámenes por tipo y procedencia: atención cerrada, abierta y emergencia.</p></div>
+          <span class="modulo-pie">Ver panel</span>
+        </a>
+        <a href="imagenologia.html" class="modulo">
+          <div class="modulo-cabeza"><span class="modulo-icono" data-icono="imagenologia"></span><span class="modulo-flecha" data-icono="flecha" data-tam="20"></span></div>
+          <div><strong>Imagenología</strong><p>Radiología, tomografía, ultrasonografía y resonancia según procedencia.</p></div>
+          <span class="modulo-pie">Ver panel</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- INDICADORES: cuando estén listas las páginas, quita la clase "pronto" y cambia "Próximamente" por "Ver panel".
+         Para ocultar toda la sección, agrega el atributo hidden: <section id="indicadores" hidden> -->
+    <section id="indicadores" hidden>
+      <h2 class="titulo-seccion">Indicadores de gestión</h2>
+      <p class="bajada">Compromisos de gestión y metas sanitarias, con su avance y cumplimiento.</p>
+      <div class="modulos">
+        <a href="comges.html" class="modulo pronto"><div class="modulo-cabeza"><span class="modulo-icono" data-icono="indicador"></span></div><div><strong>Comges</strong></div><span class="modulo-pie">Próximamente</span></a>
+        <a href="meta18834.html" class="modulo pronto"><div class="modulo-cabeza"><span class="modulo-icono" data-icono="indicador"></span></div><div><strong>Meta 18.834</strong></div><span class="modulo-pie">Próximamente</span></a>
+        <a href="meta19664.html" class="modulo pronto"><div class="modulo-cabeza"><span class="modulo-icono" data-icono="indicador"></span></div><div><strong>Meta 19.664</strong></div><span class="modulo-pie">Próximamente</span></a>
+        <a href="meta20707.html" class="modulo pronto"><div class="modulo-cabeza"><span class="modulo-icono" data-icono="indicador"></span></div><div><strong>Meta 20.707</strong></div><span class="modulo-pie">Próximamente</span></a>
+      </div>
+    </section>
+
+    <div class="dos-columnas">
+      <section id="nosotros" class="tarjeta">
+        <h2>Nosotros</h2>
+        <p class="nosotros-texto">Somos la Unidad de Estadística del Hospital San Luis de Buin–Paine. Recopilamos, procesamos, validamos y analizamos la información de la actividad asistencial y administrativa de forma oportuna, confiable y segura, de acuerdo con la normativa del Ministerio de Salud. Nuestros datos apoyan la toma de decisiones y la planificación sanitaria en beneficio de la comunidad de Buin y Paine. Queremos ser una unidad referente en gestión de la información en salud dentro de la red asistencial, reconocida por la calidad e integridad de sus datos y por un equipo comprometido que transforma la información en conocimiento para mejorar la atención de nuestros usuarios.</p>
+      </section>
+      <section id="contacto" class="tarjeta">
+        <h2>Contacto</h2>
+        <div class="dato-contacto">
+          <div><span class="etq">Correo</span><a href="mailto:Mauricio.laram@redsalud.gob.cl">Mauricio.laram@redsalud.gob.cl</a></div>
+          <div><span class="etq">Anexo</span>264881</div>
+          <div><span class="etq">Teléfono</span><a href="tel:+56225767881">2-2 5767881</a></div>
         </div>
-      </a>
-      <nav class="menu">
-        <a href="manuales.html">Manuales</a>
-        <a href="#nosotros">Nosotros</a>
-        <a href="#contacto">Contacto</a>
-      </nav>
+      </section>
     </div>
-  </header>
 
-  <section class="portada" id="Produccion">
-  <div class="contenedor">
-    <h1>Producción</h1>
-    <div class="botones">
-      <a href="urgencia.html" class="boton">Urgencia</a>
-      <a href="pabellon.html" class="boton">Pabellón</a>
-      <a href="atencion-cerrada.html" class="boton">Atención Cerrada</a>
-      <a href="produccion-medica.html" class="boton">Ambulatorio Médica</a>
-      <a href="produccion-no-medica.html" class="boton">Ambulatorio no Médica</a>
-      <a href="produccion-dental.html" class="boton">Odontología</a>
-    </div>
-  </div>
-</section>
-  
-<section class="portada" id="Apoyo Diagnóstico">
-  <div class="contenedor">
-    <h1>Apoyo Diagnóstico</h1>
-    <div class="botones">
-      <a href="Laboratorio.html" class="boton">Laboratorio</a>
-      <a href="imageneologia.html" class="boton">Imageneología</a>
-    </div>
-  </div>
-</section>
+  </main>
 
-<section class="portada" id="indicadores" hidden>
-  <div class="contenedor">
-    <h1>Indicadores</h1>
-    <div class="botones">
-      <a href="comges.html" class="boton">Comges</a>
-      <a href="meta18834.html" class="boton">Meta 18.834</a>
-      <a href="meta19664.html" class="boton">Meta 19.664</a>
-      <a href="meta20707.html" class="boton">Meta 20.707</a>
-    </div>
-  </div>
-</section>
-
-  <section id="nosotros">
-    <div class="contenedor">
-      <h2>Nosotros</h2>
-      <p>Somos la Unidad de Estadística del Hospital San Luis de Buin–Paine. Recopilamos, procesamos, validamos y analizamos la información de la actividad asistencial y administrativa de forma oportuna, confiable y segura, de acuerdo con la normativa del Ministerio de Salud. Nuestros datos apoyan la toma de decisiones y la planificación sanitaria en beneficio de la comunidad de Buin y Paine. Queremos ser una unidad referente en gestión de la información en salud dentro de la red asistencial, reconocida por la calidad e integridad de sus datos y por un equipo comprometido que transforma la información en conocimiento para mejorar la atención de nuestros usuarios.</p>
-    </div>
-  </section>
-
-  <section id="contacto" class="fondo-gris">
-    <div class="contenedor">
-      <h2>Contacto</h2>
-      <p>Correo: <a href="mailto:Mauricio.laram@redsalud.gob.cl">Mauricio.laram@redsalud.gob.cl</a></p>
-      <p>Anexo: 264881</p>
-      <p>Teléfono: <a href="tel:+56225767881">2-2 5767881</a></p>
-    </div>
-  </section>
-
-  <footer class="pie">
-    <div class="contenedor">
-      <strong>Hospital San Luis de Buin-Paine</strong>
-      <p>Unidad de Estadística · Servicio de Salud Metropolitano Sur</p>
-      <p class="pie-nota">Datos agregados. No contiene información de pacientes.</p>
-    </div>
-  </footer>
-
+<script src="comun.js"></script>
 </body>
 </html>

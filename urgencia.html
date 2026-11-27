@@ -1,572 +1,198 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Urgencia – Demanda, Atendidos y Retiro sin Alta</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<style>
-  /* Paleta institucional (misma de estilos.css) */
-  :root{
-    --azul:#0f69b4; --azul-oscuro:#0a4f8a; --azul-marino:#0a132d; --azul-claro:#e8f1fa;
-    --rojo:#eb3c46; --texto:#2b2b2b; --texto-suave:#5f6b7a; --gris-fondo:#f4f6f9;
-    --borde:#dde3ea; --blanco:#fff; --sombra:0 4px 14px rgba(10,19,45,.08); --radio:8px;
-
-    /* Medidas fluidas: se ajustan solas a cualquier tamaño de pantalla */
-    --ancho:100%;                                   /* la página usa todo el ancho disponible */
-    --margen:clamp(10px, 2.2vw, 32px);              /* márgenes laterales */
-    --separacion:clamp(12px, 1.4vw, 24px);          /* espacio entre tarjetas */
-    /* Alto de los gráficos según la pantalla: cada tarjeta (título + indicadores + gráfico)
-       cabe completa a la vista, con un mínimo para celular y un máximo para monitores grandes */
-    --alto-grafico:clamp(260px, calc(100vh - 240px), 520px);       /* gráfico Producción */
-    --alto-grafico-bajo:clamp(240px, calc(100vh - 470px), 440px);  /* gráficos C2 y Demora */
-    --demanda:var(--azul-marino); --atendidos:var(--azul); --retiro:var(--rojo);
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  [hidden]{display:none !important}
-  body{font-family:"Roboto",Arial,sans-serif;background:var(--gris-fondo);color:var(--texto);line-height:1.6}
-
-  /* Barra de gobierno azul y rojo */
-  .barra-gobierno{display:flex;height:6px}
-  .barra-gobierno .azul{flex:1;background:var(--azul)}
-  .barra-gobierno .rojo{flex:2;background:var(--rojo)}
-
-  /* Encabezado */
-  header{background:var(--blanco);border-bottom:1px solid var(--borde);box-shadow:var(--sombra);
-         position:sticky;top:0;z-index:100}
-  .encabezado-fila{max-width:var(--ancho);margin:0 auto;padding:clamp(10px,1.2vw,16px) var(--margen);display:flex;
-         justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
-  .marca-texto{display:flex;flex-direction:column;border-left:4px solid var(--azul);padding-left:12px}
-  .marca-red{font-size:.8rem;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.5px}
-  .marca-texto h1{font-size:clamp(1.05rem, .9rem + .6vw, 1.5rem);color:var(--azul-marino);line-height:1.25}
-  .btn-volver{display:inline-block;font-weight:500;padding:9px 18px;border-radius:var(--radio);
-         background:var(--blanco);color:var(--azul);text-decoration:none;border:1px solid var(--borde);
-         border-bottom:3px solid var(--rojo);transition:background-color .2s,color .2s,transform .2s}
-  .btn-volver:hover{background:var(--azul-claro);color:var(--azul-oscuro);transform:translateY(-2px)}
-
-  main{max-width:var(--ancho);margin:0 auto;padding:var(--separacion) var(--margen)}
-  .card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--radio);
-        box-shadow:var(--sombra);padding:clamp(12px,1.4vw,24px);margin-bottom:var(--separacion);min-width:0}
-
-  /* Título con línea de acento azul/rojo */
-  .titulo{color:var(--azul-marino);font-size:clamp(1.05rem, .9rem + .5vw, 1.5rem);line-height:1.25;position:relative;
-          padding-bottom:10px;margin-bottom:16px}
-  .titulo::after{content:"";position:absolute;left:0;bottom:0;width:60px;height:4px;border-radius:2px;
-          background:linear-gradient(to right,var(--azul) 50%,var(--rojo) 50%)}
-
-  /* Filtros */
-  .filtros{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end}
-  .filtro label{display:block;font-size:.75rem;font-weight:500;color:var(--texto-suave);margin-bottom:4px;
-          text-transform:uppercase;letter-spacing:.5px}
-  select{font-family:inherit;font-size:.95rem;padding:8px 10px;border:1px solid var(--borde);
-         border-radius:var(--radio);background:var(--blanco);color:var(--azul-marino);min-width:170px}
-  select:focus{outline:2px solid var(--azul-claro);border-color:var(--azul)}
-
-  /* KPIs */
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:var(--separacion)}
-  .kpi{border-left:5px solid;padding:14px 16px;background:var(--azul-claro);border-radius:var(--radio)}
-  .kpi span{font-size:.75rem;color:var(--texto-suave);text-transform:uppercase;font-weight:500;letter-spacing:.5px}
-  .kpi b{display:block;font-size:clamp(1.4rem, 1rem + 1.2vw, 2.2rem);margin-top:4px;color:var(--azul-marino)}
-  .kpi small{color:var(--texto-suave)}
-
-  .chart-box{position:relative;width:100%;height:var(--alto-grafico)}
-  .chart-box.bajo{height:var(--alto-grafico-bajo)}
-  .subtitulo{color:var(--texto-suave);font-size:clamp(.8rem, .75rem + .2vw, .95rem);margin:-6px 0 16px}
-
-  /* Indicadores C2 */
-  .c2-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:clamp(8px,1vw,14px);margin-bottom:clamp(12px,1.2vw,18px)}
-  .c2-kpi{border-left:5px solid;padding:10px 14px;background:var(--azul-claro);border-radius:var(--radio)}
-  .c2-kpi span{font-size:.72rem;color:var(--texto-suave);text-transform:uppercase;font-weight:500;letter-spacing:.5px}
-  .c2-kpi b{display:block;font-size:clamp(1.2rem, .9rem + .9vw, 1.8rem);color:var(--azul-marino)}
-  .c2-kpi.destacado{background:var(--azul-marino);border-color:var(--rojo)}
-  .c2-kpi.destacado-suave{border-color:var(--azul-oscuro)}
-  .c2-kpi.destacado span{color:#c9d3e0}
-  .c2-kpi.destacado b{color:var(--blanco)}
-
-  /* Dos gráficos lado a lado */
-  .lado-a-lado{display:grid;grid-template-columns:1fr 1fr;gap:var(--separacion);margin-bottom:var(--separacion);align-items:stretch}
-  .lado-a-lado .card{margin-bottom:0;display:flex;flex-direction:column;min-width:0}
-  .lado-a-lado .c2-kpis{grid-template-columns:repeat(2,1fr)}
-  .lado-a-lado .c2-kpis.tres{grid-template-columns:repeat(3,1fr)}
-  .lado-a-lado .chart-box{margin-top:auto}
-
-  /* Tabla */
-  .tabla-scroll{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:clamp(.78rem, .72rem + .25vw, .95rem)}
-  th,td{padding:clamp(6px,.8vw,12px);border-bottom:1px solid var(--borde);text-align:right}
-  th:first-child,td:first-child{text-align:left}
-  th{background:var(--azul-marino);color:var(--blanco);font-size:clamp(.68rem, .64rem + .15vw, .8rem);font-weight:500;
-     text-transform:uppercase;letter-spacing:.5px}
-  tbody tr:hover{background:var(--azul-claro)}
-  tfoot td{font-weight:700;background:var(--gris-fondo);color:var(--azul-marino);border-top:2px solid var(--azul)}
-  .nota{font-size:.8rem;color:var(--texto-suave);margin-top:10px}
-  .nota:empty{display:none}
-
-  #cargando{padding:14px 18px;border-radius:var(--radio);background:var(--azul-claro);color:var(--azul);
-            border-left:5px solid var(--azul);font-weight:500;margin-bottom:20px}
-  #cargando.error{background:#fdecec;color:#b3242c;border-left-color:var(--rojo)}
-
-  /* Pie */
-  .pie{background:var(--azul-marino);color:#c9d3e0;text-align:center;padding:25px 0;border-top:5px solid var(--rojo);font-size:.85rem}
-
-  /* Tablet y notebooks pequeños: los dos gráficos se apilan */
-  @media (max-width:1000px){
-    .lado-a-lado{grid-template-columns:1fr}
-  }
-
-  /* Celular */
-  @media (max-width:700px){
-    .encabezado-fila{flex-direction:column;align-items:flex-start}
-    .filtro{flex:1 1 140px}
-    select{width:100%;min-width:0}
-  }
-
-  @media (max-width:480px){
-    :root{
-      --alto-grafico:clamp(260px, 55vh, 400px);
-      --alto-grafico-bajo:clamp(220px, calc(100vh - 570px), 340px);
-    }
-    .lado-a-lado .c2-kpis,
-    .lado-a-lado .c2-kpis.tres{grid-template-columns:repeat(2,1fr)}
-    .btn-volver{width:100%;text-align:center}
-  }
-
-  /* Celular acostado o pantallas muy bajas: que el gráfico no desaparezca */
-  @media (max-height:500px){
-    .chart-box, .chart-box.bajo{height:260px}
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Urgencia | Unidad de Estadística · Hospital San Luis de Buin-Paine</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body>
-<div class="barra-gobierno"><span class="azul"></span><span class="rojo"></span></div>
-<header>
-  <div class="encabezado-fila">
-    <div class="marca-texto">
-      <span class="marca-red">Unidad de Estadística · Hospital San Luis de Buin-Paine</span>
-      <h1>Estadística de Urgencia</h1>
-    </div>
-    <!-- Botón volver: lleva a la sección id="Produccion" de la página de inicio.
-         OJO: el id distingue mayúsculas, debe escribirse igual que en index.html -->
-    <a class="btn-volver" id="btnVolver" href="index.html#Produccion">&#8592; Volver inicio</a>
-  </div>
-</header>
+<body data-pagina="urgencia" class="cargando">
 
-<main>
-  <div id="cargando">Cargando datos desde bdurgencia/l.urgencia.xlsx…</div>
-
-  <!-- FILTROS -->
-  <section class="card filtros">
-    <div class="filtro">
-      <label for="fAnio">Año</label>
-      <select id="fAnio"></select>
+  <section class="cabecera-pagina">
+    <div class="contenedor cabecera-fila">
+      <span class="cabecera-icono" data-icono="urgencia"></span>
+      <div class="cabecera-texto">
+        <h1>Urgencia</h1>
+      </div>
     </div>
-    <div class="filtro">
-      <label for="fMes">Mes</label>
-      <select id="fMes"></select>
-    </div>
+    <div class="acento"></div>
   </section>
 
-  <!-- KPIs -->
-  <section class="card kpis">
-    <div class="kpi" style="border-color:var(--demanda)"><span>Demanda</span><b id="kDemanda">0</b><small>&nbsp;</small></div>
-    <div class="kpi" style="border-color:var(--atendidos)"><span>Atendidos</span><b id="kAtendidos">0</b><small id="kAtendidosPct"></small></div>
-    <div class="kpi" style="border-color:var(--retiro)"><span>Retiro sin alta</span><b id="kRetiro">0</b><small id="kRetiroPct"></small></div>
-  </section>
+  <main class="contenido">
+    <div class="contenedor">
 
-  <!-- GRÁFICO -->
-  <section class="card">
-    <h2 class="titulo">Producción</h2>
-    <div class="chart-box"><canvas id="grafico"></canvas></div>
-  </section>
+      <div id="aviso" class="aviso">Cargando datos desde bdurgencia/l.urgencia.xlsx…</div>
 
-  <!-- TABLA -->
-  <section class="card">
-    <div class="tabla-scroll">
-      <table>
-        <thead><tr><th>Clasificación</th><th>Demanda</th><th>Atendidos</th><th>Retiro sin alta</th><th>% Atendidos</th><th>% Retiro sin alta</th></tr></thead>
-        <tbody id="tBody"></tbody>
-        <tfoot id="tFoot"></tfoot>
-      </table>
+      <!-- FILTROS -->
+      <section class="tarjeta filtros">
+        <div class="filtros-campos">
+          <label for="fAnio">Año<select id="fAnio"></select></label>
+          <label for="fMes">Mes<select id="fMes"></select></label>
+        </div>
+        <div class="acciones">
+          <button type="button" class="boton-accion" data-exportar><span data-icono="descargar" data-tam="18"></span>Descargar Excel</button>
+          <button type="button" class="boton-accion" data-imprimir><span data-icono="imprimir" data-tam="18"></span>Imprimir</button>
+        </div>
+      </section>
+
+      <!-- KPIs -->
+      <section class="kpis" aria-live="polite">
+        <div class="kpi marino"><span>Demanda</span><b id="kDemanda">–</b>
+          <div class="kpi-pie"><small id="kDemandaD">&nbsp;</small><svg class="spark" id="sDemanda"></svg></div></div>
+        <div class="kpi"><span>Atendidos</span><b id="kAtendidos">–</b><small id="kAtendidosPct">&nbsp;</small></div>
+        <div class="kpi rojo"><span>Retiro sin alta</span><b id="kRetiro">–</b><small id="kRetiroPct">&nbsp;</small></div>
+        <div class="kpi destacado"><span>C2 atendidos en menos de 31 min</span><b id="kC2">–</b><small id="kC2d">&nbsp;</small></div>
+      </section>
+
+      <!-- PRODUCCIÓN POR CLASIFICACIÓN -->
+      <article class="tarjeta">
+        <h2>Producción por clasificación</h2>
+        <div class="chart-box"><canvas id="grafico"></canvas></div>
+        <details>
+          <summary>Ver tabla por clasificación</summary>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Clasificación</th><th>Demanda</th><th>Atendidos</th><th>Retiro sin alta</th><th>% Atendidos</th><th>% Retiro sin alta</th></tr></thead>
+              <tbody id="tBody"></tbody>
+              <tfoot id="tFoot"></tfoot>
+            </table>
+          </div>
+        </details>
+      </article>
+
+      <!-- EVOLUCIÓN MENSUAL -->
+      <article class="tarjeta">
+        <h2>Evolución mensual</h2>
+        <div class="chart-box bajo"><canvas id="graficoMes"></canvas></div>
+        <details>
+          <summary>Ver tabla por mes</summary>
+          <div class="scroll"><table id="tMes"></table></div>
+        </details>
+      </article>
+
+      <!-- C2 Y DEMORA, UNO AL LADO DEL OTRO -->
+      <div class="dos-columnas">
+        <article class="tarjeta">
+          <h2>Categorización C2</h2>
+          <p class="sub">Atención médica niño y adulto · solo pacientes atendidos</p>
+          <div class="kpis">
+            <div class="kpi marino"><span>Total C2</span><b id="c2Total">–</b></div>
+            <div class="kpi rojo"><span>Más de 30 min</span><b id="c2Mas30">–</b></div>
+            <div class="kpi"><span>Menos de 31 min</span><b id="c2Menos31">–</b></div>
+          </div>
+          <div class="chart-box bajo"><canvas id="graficoC2"></canvas></div>
+          <p class="note" id="c2Nota"></p>
+        </article>
+
+        <article class="tarjeta">
+          <h2>Demora de ingreso a cama hospitalaria</h2>
+          <p class="sub">Pacientes con indicación de hospitalización en espera de camas en UEH</p>
+          <div class="kpis">
+            <div class="kpi marino"><span>Total</span><b id="dTotal">–</b></div>
+            <div class="kpi rojo"><span>Mayor a 24 horas</span><b id="dMas24">–</b></div>
+            <div class="kpi destacado"><span>Ingresan en menos de 12 h</span><b id="dPct">–</b></div>
+          </div>
+          <div class="chart-box bajo"><canvas id="graficoD"></canvas></div>
+          <p class="note" id="dNota"></p>
+        </article>
+      </div>
+
     </div>
-  </section>
+  </main>
 
-  <!-- GRÁFICOS C2 Y DEMORA, UNO AL LADO DEL OTRO -->
-  <div class="lado-a-lado">
-
-  <!-- GRÁFICO C2 -->
-  <section class="card">
-    <h2 class="titulo">Categorización C2</h2>
-    <p class="subtitulo">Atención médica niño y adulto · solo pacientes atendidos</p>
-    <div class="c2-kpis">
-      <div class="c2-kpi" style="border-color:var(--azul-marino)"><span>Total C2</span><b id="c2Total">0</b></div>
-      <div class="c2-kpi" style="border-color:var(--rojo)"><span>Atendidos en más de 30 min</span><b id="c2Mas30">0</b></div>
-      <div class="c2-kpi" style="border-color:var(--azul)"><span>Atendidos en menos de 31 min</span><b id="c2Menos31">0</b></div>
-      <div class="c2-kpi destacado"><span>% atendidos en menos de 31 min</span><b id="c2Pct">–</b></div>
-    </div>
-    <div class="chart-box bajo"><canvas id="graficoC2"></canvas></div>
-    <p class="nota" id="c2Nota"></p>
-  </section>
-
-  <!-- GRÁFICO REM A08 SECCIÓN D -->
-  <section class="card">
-    <h2 class="titulo">Demora de ingreso a cama hospitalaria</h2>
-    <p class="subtitulo">Pacientes con indicación de hospitalización en espera de camas en UEH</p>
-    <div class="c2-kpis tres">
-      <div class="c2-kpi destacado-suave"><span>Total</span><b id="dTotal">0</b></div>
-      <div class="c2-kpi" style="border-color:var(--azul)"><span>Menos de 12 horas</span><b id="dMenos12">0</b></div>
-      <div class="c2-kpi" style="border-color:var(--azul-marino)"><span>12 – 24 horas</span><b id="d12a24">0</b></div>
-      <div class="c2-kpi" style="border-color:var(--rojo)"><span>Mayor a 24 horas</span><b id="dMas24">0</b></div>
-      <div class="c2-kpi" style="border-color:var(--texto-suave)"><span>Permanecen en UEH</span><b id="dPermanecen">0</b></div>
-      <div class="c2-kpi destacado"><span>% ingresan en menos de 12 horas</span><b id="dPct">–</b></div>
-    </div>
-    <div class="chart-box bajo"><canvas id="graficoD"></canvas></div>
-    <p class="nota" id="dNota"></p>
-  </section>
-
-  </div>
-</main>
-
-<footer class="pie">Unidad de Estadística · Hospital San Luis de Buin-Paine</footer>
-
+<script src="comun.js"></script>
 <script>
-/* ---------- botón "Volver inicio" ----------
-   Busca index.html en la misma carpeta de esta página; si no está, en la carpeta de arriba. */
-const SECCION_INICIO = "Produccion";   // id de la sección en index.html (con la misma mayúscula)
-(async () => {
-  const btn = document.getElementById("btnVolver");
-  for (const ruta of ["index.html", "../index.html"]) {
-    try {
-      const r = await fetch(ruta, { method: "HEAD", cache: "no-store" });
-      if (r.ok) { btn.href = ruta + "#" + SECCION_INICIO; return; }
-    } catch (e) { /* sigue con la siguiente ruta */ }
-  }
-})();
-
-const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
 /* =====================================================================
-   RUTA DEL EXCEL (relativa a este archivo .html)
-   Estructura esperada:
-     PAGINA ESTADISTICA/
-       ├─ urgencia.html         ← esta página
-       └─ bdurgencia/
-            └─ l.urgencia.xlsx  ← base de datos
+   DATOS DE ESTA PÁGINA
+     · bdurgencia/l.urgencia.xlsx  (base de atenciones de urgencia)
+     · REM SA, hoja A08 Sección D   (demora de ingreso a cama)
    ===================================================================== */
-const RUTA_EXCEL = "bdurgencia/l.urgencia.xlsx";
+const RUTAS_BASE = ["bdurgencia/l.urgencia.xlsx"];
 
-/* Columnas que se usan del Excel */
+/* Columnas que se usan de la base */
 const COL_CLASIFICACION = "CLASIFICACION2";
-const COL_ESTADO        = "ESTADO CITA";      // ATENDIDO / RETIRO SIN ALTA
-/* Fecha de admisión: la base nueva la trae como "FECHA ADM 2"; se acepta también el nombre anterior */
-const COL_FECHA         = ["FECHA ADM 2", "Fecha Admisión"];
+const COL_ESTADO        = "ESTADO CITA";                       // ATENDIDO / RETIRO SIN ALTA
+const COL_FECHA         = ["FECHA ADM 2", "Fecha Admisión"];   // se acepta también el nombre anterior
 const COL_CATEGORIA     = "Primera Categorización";
-/* Demora desde la admisión hasta la atención clínica (formato hh:mm:ss) */
-const COL_TIEMPO        = "DEMORA AC";
+const COL_TIEMPO        = "DEMORA AC";                         // hh:mm:ss desde la admisión a la atención clínica
 
-/* Filtros del gráfico C2 */
-const C2_CLASIFICACION  = "ATENCION MEDICA NIÑO Y ADULTO";
-const C2_ESTADO         = "ATENDIDO";
-const C2_CATEGORIA      = "C2";
-const C2_LIMITE_MIN     = 30;   // más de 30 min  /  menos de 31 min
+/* Gráfico C2 */
+const C2_CLASIFICACION = "ATENCION MEDICA NIÑO Y ADULTO";
+const C2_ESTADO = "ATENDIDO", C2_CATEGORIA = "C2", C2_LIMITE_MIN = 30;
 
-/* Colores institucionales para el gráfico */
-const COLOR = { demanda: "#0a132d", atendidos: "#0f69b4", retiro: "#eb3c46" };
-
-/* =====================================================================
-   REM A (archivos SA_01 … SA_12 por año)
-     PAGINA ESTADISTICA/
-       └─ REM/
-            └─ 2026/
-                 └─ REM_A/        (o REM_SA: se detecta sola)
-                      ├─ SA_01.xlsm
-                      ├─ …
-                      └─ SA_12.xlsm
-   Los meses que aún no existen se omiten sin error.
-   ===================================================================== */
-/* La página prueba sola estas carpetas y extensiones y usa la primera donde encuentre archivos */
-const CARPETAS_REM    = ["REM_A", "REM_SA", "REM A", "REM SA"];
-const EXTENSIONES_REM = [".xlsm", ".xlsx", ".xls"];
-let RUTA_REM = (anio, mes) => `REM/${anio}/REM_A/SA_${String(mes).padStart(2, "0")}.xlsm`;
-const REM_HOJA = "A08";
-/* Ítems de la sección D que se suman (columna TOTAL) */
+/* REM A08 sección D: ítems que se suman (columna TOTAL) */
 const D_ITEMS = [
-  { clave: "menos12",     texto: "MENOS DE 12 HORAS",               etiqueta: "Menos de 12 horas" },
-  { clave: "de12a24",     texto: "12 - 24 HORAS",                   etiqueta: "12 – 24 horas" },
-  { clave: "mas24",       texto: "MAYOR A 24 HORAS",                etiqueta: "Mayor a 24 horas" },
-  { clave: "permanecen",  texto: "PACIENTES QUE PERMANECEN EN UEH", etiqueta: "Permanecen en UEH" }
+  { clave: "menos12",    texto: "MENOS DE 12 HORAS",               etiqueta: ["Menos de", "12 horas"] },
+  { clave: "de12a24",    texto: "12 - 24 HORAS",                   etiqueta: ["12 – 24", "horas"] },
+  { clave: "mas24",      texto: "MAYOR A 24 HORAS",                etiqueta: ["Mayor a", "24 horas"] },
+  { clave: "permanecen", texto: "PACIENTES QUE PERMANECEN EN UEH", etiqueta: ["Permanecen", "en UEH"] }
 ];
+/* Orden fijo de las clasificaciones */
+const ORDEN = ["ATENCION MEDICA NIÑO Y ADULTO", "ATENCION MEDICA GINECO-OBSTETRA", "ATENCION POR MATRONA"];
 
-let datos = [];
-let datosD = [];          // { anio, mes, menos12, de12a24, mas24, permanecen }
-let datosC2 = [];
-let c2ColumnasOk = true;
+const { $, norm, num, dec, pct, MESES, MESES_CORTOS, COLOR, graf } = U;
+let datos = [], datosC2 = [], datosD = [], c2ColumnasOk = true;
 
-/* Orden fijo de las tres clasificaciones de CLASIFICACION2 */
-const ORDEN = ["ATENCION MEDICA NIÑO Y ADULTO","ATENCION MEDICA GINECO-OBSTETRA","ATENCION POR MATRONA"];
-
-/* ---------- utilidades ---------- */
-const fmt = n => Number(n || 0).toLocaleString("es-CL");
-const pct = (a,b) => b ? (a / b * 100).toFixed(1).replace(".", ",") + "%" : "–";
-/* Mayúsculas y sin tildes, para comparar nombres de columnas y valores */
-const norm = v => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
-
-/* ---------- filtros ---------- */
-const fAnio = document.getElementById("fAnio");
-const fMes  = document.getElementById("fMes");
-
-function llenarFiltros() {
-  const anios = [...new Set(datos.map(d => d.anio))].sort((a,b) => b - a);
-  fAnio.innerHTML = '<option value="">Todos</option>' + anios.map(a => `<option value="${a}">${a}</option>`).join("");
-  if (anios.length) fAnio.value = anios[0];
-  llenarMeses();
-}
-
-function llenarMeses() {
-  const sel = fMes.value;
-  const meses = [...new Set(datos.filter(d => !fAnio.value || d.anio == fAnio.value).map(d => d.mes).filter(Boolean))].sort((a,b) => a - b);
-  fMes.innerHTML = '<option value="">Todos</option>' + meses.map(m => `<option value="${m}">${MESES[m-1]}</option>`).join("");
-  if (meses.includes(Number(sel))) fMes.value = sel;
-}
-
-/* ---------- gráfico (solo valores, sin porcentajes) ---------- */
-Chart.register(ChartDataLabels);
-Chart.defaults.font.family = '"Roboto", Arial, sans-serif';
-Chart.defaults.color = "#5f6b7a";
-Chart.defaults.maintainAspectRatio = false;   // el alto lo define el CSS (.chart-box)
-Chart.defaults.resizeDelay = 100;             // redibuja suave al cambiar el tamaño de la ventana
-
-/* Tamaños de letra que se ajustan al ancho de cada gráfico */
-const tam = (ctx, chico, grande) => {
-  const w = ctx.chart.width || 800;
-  return w < 420 ? chico : w < 700 ? Math.round((chico + grande) / 2) : grande;
-};
-const fuenteEje   = ctx => ({ size: tam(ctx, 10, 13), weight: "500" });
-const fuenteValor = ctx => ({ size: tam(ctx, 10, 13), weight: "600" });
-
-/* Parte un texto largo en varias líneas para el eje X */
-function partir(texto, maxCar) {
-  const palabras = String(texto).split(" "), lineas = [];
-  let linea = "";
-  for (const p of palabras) {
-    if ((linea + " " + p).trim().length > maxCar && linea) { lineas.push(linea); linea = p; }
-    else linea = (linea + " " + p).trim();
-  }
-  if (linea) lineas.push(linea);
-  return lineas;
-}
-
-const grafico = new Chart(document.getElementById("grafico"), {
-  type: "bar",
-  data: { labels: [], datasets: [
-    { label: "Demanda",         data: [], backgroundColor: COLOR.demanda,   borderRadius: 6 },
-    { label: "Atendidos",       data: [], backgroundColor: COLOR.atendidos, borderRadius: 6 },
-    { label: "Retiro sin alta", data: [], backgroundColor: COLOR.retiro,    borderRadius: 6 }
-  ]},
-  options: {
-    responsive: true,
-    plugins: {
-      legend: { position: "top", labels: { usePointStyle: true, pointStyle: "rectRounded", color: "#0a132d", font: { weight: "500" } } },
-      tooltip: {
-        backgroundColor: "#0a132d", titleColor: "#fff", bodyColor: "#e8f1fa", padding: 10, cornerRadius: 8,
-        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` }
-      },
-      datalabels: {
-        anchor: "end", align: "end", offset: 2,
-        color: "#0a132d", font: fuenteValor,
-        formatter: v => fmt(v)
-      }
-    },
-    scales: {
-      y: { beginAtZero: true, grace: "12%", ticks: { callback: v => fmt(v), font: fuenteEje }, grid: { color: "#dde3ea" }, border: { display: false } },
-      x: { grid: { display: false },
-           ticks: { color: "#0a132d", font: fuenteEje, maxRotation: 0, autoSkip: false,
-                    callback: function (v) {
-                      const w = this.chart.width;
-                      return partir(this.getLabelForValue(v), w < 500 ? 12 : w < 900 ? 18 : 40);
-                    } } }
-    }
-  }
-});
-
-/* ---------- gráfico C2 ---------- */
-const graficoC2 = new Chart(document.getElementById("graficoC2"), {
-  type: "bar",
-  data: {
-    labels: ["Total C2", ["Más de", "30 min"], ["Menos de", "31 min"]],
-    datasets: [{ label: "Pacientes C2", data: [0, 0, 0],
-                 backgroundColor: [COLOR.demanda, COLOR.retiro, COLOR.atendidos],
-                 borderRadius: 6, maxBarThickness: 180 }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "#0a132d", titleColor: "#fff", bodyColor: "#e8f1fa", padding: 10, cornerRadius: 8,
-        callbacks: { label: ctx => ` ${fmt(ctx.raw)} pacientes` }
-      },
-      datalabels: {
-        anchor: "end", align: "end", offset: 2,
-        color: "#0a132d", font: fuenteValor,
-        formatter: v => fmt(v)
-      }
-    },
-    scales: {
-      y: { beginAtZero: true, grace: "12%", ticks: { callback: v => fmt(v), font: fuenteEje }, grid: { color: "#dde3ea" }, border: { display: false } },
-      x: { grid: { display: false }, ticks: { color: "#0a132d", font: fuenteEje, maxRotation: 0, autoSkip: false } }
-    }
-  }
-});
-
-/* ---------- gráfico REM A08 sección D ---------- */
-const graficoD = new Chart(document.getElementById("graficoD"), {
-  type: "bar",
-  data: {
-    labels: [["Menos de", "12 horas"], ["12 – 24", "horas"], ["Mayor a", "24 horas"], ["Permanecen", "en UEH"]],
-    datasets: [{ label: "Pacientes", data: [0, 0, 0, 0],
-                 backgroundColor: [COLOR.atendidos, COLOR.demanda, COLOR.retiro, "#5f6b7a"],
-                 borderRadius: 6, maxBarThickness: 180 }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "#0a132d", titleColor: "#fff", bodyColor: "#e8f1fa", padding: 10, cornerRadius: 8,
-        callbacks: { label: ctx => ` ${fmt(ctx.raw)} pacientes` }
-      },
-      datalabels: {
-        anchor: "end", align: "end", offset: 2,
-        color: "#0a132d", font: fuenteValor,
-        formatter: v => fmt(v)
-      }
-    },
-    scales: {
-      y: { beginAtZero: true, grace: "12%", ticks: { callback: v => fmt(v), font: fuenteEje }, grid: { color: "#dde3ea" }, border: { display: false } },
-      x: { grid: { display: false }, ticks: { color: "#0a132d", font: fuenteEje, maxRotation: 0, autoSkip: false } }
-    }
-  }
-});
-
-function actualizarD() {
-  const t = { menos12: 0, de12a24: 0, mas24: 0, permanecen: 0 };
-  const meses = [];
-  for (const d of datosD) {
-    if ((fAnio.value && d.anio != fAnio.value) || (fMes.value && d.mes != fMes.value)) continue;
-    D_ITEMS.forEach(i => t[i.clave] += d[i.clave]);
-    meses.push(d);
-  }
-  const total = t.menos12 + t.de12a24 + t.mas24 + t.permanecen;
-  graficoD.data.datasets[0].data = D_ITEMS.map(i => t[i.clave]);
-  graficoD.update();
-
-  document.getElementById("dTotal").textContent      = fmt(total);
-  document.getElementById("dMenos12").textContent    = fmt(t.menos12);
-  document.getElementById("d12a24").textContent      = fmt(t.de12a24);
-  document.getElementById("dMas24").textContent      = fmt(t.mas24);
-  document.getElementById("dPermanecen").textContent = fmt(t.permanecen);
-  document.getElementById("dPct").textContent        = pct(t.menos12, total);
-
-  /* Solo muestra un aviso si no hay archivos REM para el periodo */
-  document.getElementById("dNota").textContent = meses.length
-    ? "" : "No hay archivos REM (hoja A08) para el periodo seleccionado.";
-}
-
-function actualizarC2() {
-  const t = { total: 0, mas30: 0, menos31: 0, sinTiempo: 0 };
-  for (const d of datosC2) {
-    if ((fAnio.value && d.anio != fAnio.value) || (fMes.value && d.mes != fMes.value)) continue;
-    t.total += d.total; t.mas30 += d.mas30; t.menos31 += d.menos31; t.sinTiempo += d.sinTiempo;
-  }
-  graficoC2.data.datasets[0].data = [t.total, t.mas30, t.menos31];
-  graficoC2.update();
-
-  document.getElementById("c2Total").textContent   = fmt(t.total);
-  document.getElementById("c2Mas30").textContent   = fmt(t.mas30);
-  document.getElementById("c2Menos31").textContent = fmt(t.menos31);
-  document.getElementById("c2Pct").textContent     = pct(t.menos31, t.total);
-  if (!c2ColumnasOk) return;
-  /* Solo muestra un aviso si hay C2 sin tiempo registrado */
-  document.getElementById("c2Nota").textContent = t.sinTiempo
-    ? `Hay ${fmt(t.sinTiempo)} C2 sin tiempo registrado: cuentan en el total, pero no en los tramos.` : "";
-}
-
-function actualizar() {
-  const filtrados = datos.filter(d =>
-    (!fAnio.value || d.anio == fAnio.value) &&
-    (!fMes.value  || d.mes  == fMes.value));
-
-  const grupos = {};
-  for (const d of filtrados) {
-    const g = grupos[d.clasificacion] ||= { demanda: 0, atendidos: 0, retiro: 0 };
-    g.demanda += d.demanda; g.atendidos += d.atendidos; g.retiro += d.retiro;
-  }
-  const clas = [...ORDEN, ...Object.keys(grupos).filter(k => !ORDEN.includes(k))]
-    .filter(k => grupos[k] || ORDEN.includes(k));
-  clas.forEach(k => grupos[k] ||= { demanda: 0, atendidos: 0, retiro: 0 });
-
-  grafico.data.labels = clas;
-  grafico.data.datasets[0].data = clas.map(k => grupos[k].demanda);
-  grafico.data.datasets[1].data = clas.map(k => grupos[k].atendidos);
-  grafico.data.datasets[2].data = clas.map(k => grupos[k].retiro);
-  grafico.update();
-
-  const tot = clas.reduce((t,k) => (t.demanda += grupos[k].demanda, t.atendidos += grupos[k].atendidos, t.retiro += grupos[k].retiro, t), {demanda:0, atendidos:0, retiro:0});
-  document.getElementById("kDemanda").textContent   = fmt(tot.demanda);
-  document.getElementById("kAtendidos").textContent = fmt(tot.atendidos);
-  document.getElementById("kRetiro").textContent    = fmt(tot.retiro);
-  document.getElementById("kAtendidosPct").textContent = pct(tot.atendidos, tot.demanda) + " de la demanda";
-  document.getElementById("kRetiroPct").textContent    = pct(tot.retiro, tot.demanda) + " de la demanda";
-
-  /* Tabla: Demanda · Atendidos · Retiro sin alta · % Atendidos · % Retiro sin alta */
-  document.getElementById("tBody").innerHTML = clas.map(k => {
-    const g = grupos[k];
-    return `<tr><td>${k}</td><td>${fmt(g.demanda)}</td><td>${fmt(g.atendidos)}</td><td>${fmt(g.retiro)}</td><td>${pct(g.atendidos,g.demanda)}</td><td>${pct(g.retiro,g.demanda)}</td></tr>`;
-  }).join("") || '<tr><td colspan="6" style="text-align:center">Sin datos para el filtro seleccionado</td></tr>';
-  document.getElementById("tFoot").innerHTML =
-    `<tr><td>Total</td><td>${fmt(tot.demanda)}</td><td>${fmt(tot.atendidos)}</td><td>${fmt(tot.retiro)}</td><td>${pct(tot.atendidos,tot.demanda)}</td><td>${pct(tot.retiro,tot.demanda)}</td></tr>`;
-
-  actualizarC2();
-  actualizarD();
-}
-
-fAnio.addEventListener("change", () => { llenarMeses(); actualizar(); });
-fMes.addEventListener("change", actualizar);
-
-/* ---------- lectura del Excel ---------- */
+/* ---------- lectura de la base ---------- */
 function parseFecha(v) {
   if (v instanceof Date) return v;
-  if (typeof v === "number") {                                   // fecha serial de Excel
-    const p = XLSX.SSF.parse_date_code(v);
-    return p ? new Date(p.y, p.m - 1, p.d) : null;
-  }
+  if (typeof v === "number") { const p = XLSX.SSF.parse_date_code(v); return p ? new Date(p.y, p.m - 1, p.d) : null; }
   const s = String(v || "").trim();
-  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);   // dd/mm/aaaa
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
   if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
-  m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);       // aaaa-mm-dd
+  m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
   if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
   return null;
 }
-
-/* Convierte la demora a minutos.
-   Acepta: hora de Excel (fracción de día, incluso demoras de más de 24 h) o texto "hh:mm:ss" / "hh:mm". */
+/* Demora en minutos: hora de Excel (fracción de día) o texto "hh:mm:ss" */
 function parseMinutos(v) {
-  if (v === "" || v === null || v === undefined) return null;
-  if (typeof v === "number") return v < 0 ? null : Math.round(v * 86400) / 60;   // redondeo al segundo; negativo = error de registro
-  const s = String(v).trim();
-  const m = s.match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?/);
+  if (v === "" || v == null) return null;
+  if (typeof v === "number") return v < 0 ? null : Math.round(v * 86400) / 60;
+  const s = String(v).trim(), m = s.match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?/);
   if (m) return +m[1] * 60 + +m[2] + (m[3] ? +m[3] / 60 : 0);
-  const n = Number(s.replace(",", "."));
-  return isNaN(n) ? null : n;
+  const x = Number(s.replace(",", "."));
+  return isNaN(x) ? null : x;
+}
+function leerBase(wb) {
+  const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "", raw: true });
+  const cab = filas[0].map(norm);
+  const iClas = cab.indexOf(norm(COL_CLASIFICACION)), iEst = cab.indexOf(norm(COL_ESTADO));
+  const iFec = COL_FECHA.map(c => cab.indexOf(norm(c))).find(i => i >= 0) ?? -1;
+  const iCat = cab.indexOf(norm(COL_CATEGORIA)), iTie = cab.indexOf(norm(COL_TIEMPO));
+  if (iClas < 0 || iEst < 0 || iFec < 0)
+    throw new Error(`Faltan columnas en el Excel: ${[iClas < 0 && COL_CLASIFICACION, iEst < 0 && COL_ESTADO, iFec < 0 && COL_FECHA[0]].filter(Boolean).join(", ")}`);
+  c2ColumnasOk = iCat >= 0 && iTie >= 0;
+
+  const acc = {}, accC2 = {};
+  for (let r = 1; r < filas.length; r++) {
+    const f = filas[r];
+    const clas = String(f[iClas] || "").trim().toUpperCase(), fecha = parseFecha(f[iFec]);
+    if (!clas || !fecha) continue;
+    const anio = fecha.getFullYear(), mes = fecha.getMonth() + 1;
+    const a = acc[anio + "|" + mes + "|" + clas] ||= { anio, mes, clasificacion: clas, demanda: 0, atendidos: 0, retiro: 0 };
+    const est = String(f[iEst] || "").trim().toUpperCase();
+    a.demanda++;
+    if (est === "ATENDIDO") a.atendidos++; else if (est === "RETIRO SIN ALTA") a.retiro++;
+    if (iCat >= 0 && norm(clas) === norm(C2_CLASIFICACION) && norm(est) === C2_ESTADO && norm(f[iCat]) === C2_CATEGORIA) {
+      const c = accC2[anio + "|" + mes] ||= { anio, mes, total: 0, mas30: 0, menos31: 0, sinTiempo: 0 };
+      c.total++;
+      const min = iTie >= 0 ? parseMinutos(f[iTie]) : null;
+      if (min === null) c.sinTiempo++; else if (min > C2_LIMITE_MIN) c.mas30++; else c.menos31++;
+    }
+  }
+  datos = Object.values(acc);
+  datosC2 = Object.values(accC2);
 }
 
-/* Lee la hoja A08 de un REM y devuelve los totales de la sección D */
+/* ---------- REM A08 sección D ---------- */
 function leerSeccionD(wb) {
-  const hoja = wb.Sheets[REM_HOJA];
+  const hoja = wb.Sheets["A08"];
   if (!hoja) return null;
   const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: "", raw: true });
   const ini = filas.findIndex(f => f.some(c => norm(c).startsWith("SECCION D")));
@@ -574,7 +200,7 @@ function leerSeccionD(wb) {
   const fin = filas.findIndex((f, i) => i > ini && f.some(c => norm(c).startsWith("SECCION E")));
   const bloque = filas.slice(ini, fin < 0 ? ini + 20 : fin);
   const filaTotal = bloque.find(f => f.some(c => norm(c) === "TOTAL"));
-  const colTotal = filaTotal ? filaTotal.findIndex(c => norm(c) === "TOTAL") : 2;   // columna C
+  const colTotal = filaTotal ? filaTotal.findIndex(c => norm(c) === "TOTAL") : 2;
   const res = {};
   for (const item of D_ITEMS) {
     const f = bloque.find(f => f.some(c => norm(c) === item.texto));
@@ -583,117 +209,162 @@ function leerSeccionD(wb) {
   return res;
 }
 
-async function existe(url) {
-  try {
-    const r = await fetch(encodeURI(url), { method: "HEAD", cache: "no-store" });
-    if (r.ok) return true;
-    if (r.status === 405 || r.status === 501) return (await fetch(encodeURI(url), { cache: "no-store" })).ok;
-  } catch (e) {}
-  return false;
-}
-async function buscarCarpetaREM(anios) {
-  for (const car of CARPETAS_REM) for (const ext of EXTENSIONES_REM) {
-    const ruta = (anio, mes) => `REM/${anio}/${car}/SA_${String(mes).padStart(2, "0")}${ext}`;
-    for (const anio of anios) {
-      const hay = await Promise.all(Array.from({ length: 12 }, (_, i) => existe(ruta(anio, i + 1))));
-      if (hay.some(Boolean)) return ruta;
+/* ---------- gráficos ---------- */
+const barrasSimples = (id, labels, colores) => new Chart($(id), {
+  type: "bar",
+  data: { labels, datasets: [{ label: "Pacientes", data: labels.map(() => 0), backgroundColor: colores, borderRadius: 6, maxBarThickness: 140 }] },
+  options: {
+    plugins: { legend: { display: false }, tooltip: { ...graf.tooltip, callbacks: { ...graf.tooltip.callbacks, label: ctx => ` ${num(ctx.raw)} pacientes` } }, datalabels: graf.etiquetas },
+    scales: { y: graf.ejeValores, x: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje, maxRotation: 0, autoSkip: false } } }
+  }
+});
+
+const grafico = new Chart($("grafico"), {
+  type: "bar",
+  data: { labels: [], datasets: [
+    { label: "Demanda", data: [], backgroundColor: COLOR.marino, borderRadius: 6, maxBarThickness: 90 },
+    { label: "Atendidos", data: [], backgroundColor: COLOR.azul, borderRadius: 6, maxBarThickness: 90 },
+    { label: "Retiro sin alta", data: [], backgroundColor: COLOR.rojo, borderRadius: 6, maxBarThickness: 90 }
+  ]},
+  options: {
+    plugins: { legend: graf.leyenda, tooltip: graf.tooltip, datalabels: graf.etiquetas },
+    scales: {
+      y: graf.ejeValores,
+      x: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje, maxRotation: 0, autoSkip: false,
+           callback: function (v) { const w = this.chart.width; return U.partir(this.getLabelForValue(v), w < 500 ? 12 : w < 900 ? 18 : 40); } } }
     }
   }
-  return null;
+});
+
+const graficoMes = new Chart($("graficoMes"), {
+  type: "line",
+  data: { labels: [], datasets: [["Demanda", COLOR.marino], ["Atendidos", COLOR.azul], ["Retiro sin alta", COLOR.rojo]].map(([label, c]) =>
+    ({ label, data: [], borderColor: c, backgroundColor: c, borderWidth: 3, tension: 0.25, pointRadius: 4, pointHoverRadius: 7 })) },
+  options: {
+    interaction: { mode: "index", intersect: false },
+    plugins: { legend: graf.leyenda, tooltip: graf.tooltip,
+               datalabels: { display: ctx => ctx.chart.width >= 760 && ctx.datasetIndex === 0, align: "top", offset: 4, color: COLOR.marino, font: graf.fuenteValor, formatter: v => num(v) } },
+    scales: { y: graf.ejeValores, x: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje } } }
+  }
+});
+
+const graficoC2 = barrasSimples("graficoC2", ["Total C2", ["Más de", "30 min"], ["Menos de", "31 min"]], [COLOR.marino, COLOR.rojo, COLOR.azul]);
+const graficoD = barrasSimples("graficoD", D_ITEMS.map(i => i.etiqueta), [COLOR.azul, COLOR.marino, COLOR.rojo, COLOR.gris]);
+U.vigilarGraficos([grafico, graficoMes, graficoC2, graficoD]);
+
+/* ---------- sumas ---------- */
+const enPeriodo = (d, anio, mes) => d.anio == anio && (!mes || d.mes == mes);
+function sumaGeneral(anio, mes) {
+  return datos.filter(d => enPeriodo(d, anio, mes)).reduce((t, d) => (t.demanda += d.demanda, t.atendidos += d.atendidos, t.retiro += d.retiro, t), { demanda: 0, atendidos: 0, retiro: 0 });
+}
+function sumaC2(anio, mes) {
+  return datosC2.filter(d => enPeriodo(d, anio, mes)).reduce((t, d) => (t.total += d.total, t.mas30 += d.mas30, t.menos31 += d.menos31, t.sinTiempo += d.sinTiempo, t), { total: 0, mas30: 0, menos31: 0, sinTiempo: 0 });
+}
+const pctNum = (a, b) => b ? a / b * 100 : null;
+
+/* ---------- actualizar todo según los filtros ---------- */
+function actualizar() {
+  const anio = $("fAnio").value, mes = Number($("fMes").value) || 0;
+  const ant = mes ? U.mesAnterior(anio, mes) : null;
+  const vsAnt = ant ? ` vs ${MESES_CORTOS[ant.mes - 1].toLowerCase()}` : "";
+
+  /* por clasificación */
+  const grupos = {};
+  for (const d of datos.filter(d => enPeriodo(d, anio, mes))) {
+    const g = grupos[d.clasificacion] ||= { demanda: 0, atendidos: 0, retiro: 0 };
+    g.demanda += d.demanda; g.atendidos += d.atendidos; g.retiro += d.retiro;
+  }
+  const clas = [...ORDEN, ...Object.keys(grupos).filter(k => !ORDEN.includes(k))];
+  clas.forEach(k => grupos[k] ||= { demanda: 0, atendidos: 0, retiro: 0 });
+  const tot = sumaGeneral(anio, mes);
+
+  /* KPIs */
+  U.animar("kDemanda", tot.demanda);
+  U.animar("kAtendidos", tot.atendidos);
+  U.animar("kRetiro", tot.retiro);
+  if (ant) {
+    const tAnt = sumaGeneral(ant.anio, ant.mes);
+    U.variacion("kDemandaD", tot.demanda, tAnt.demanda || null, { texto: vsAnt });
+    U.variacion("kRetiroPct", pctNum(tot.retiro, tot.demanda), pctNum(tAnt.retiro, tAnt.demanda), { sentido: -1, tipo: "pt", texto: vsAnt, extra: ` · ${pct(tot.retiro, tot.demanda)} de la demanda` });
+  } else {
+    $("kDemandaD").textContent = U.etiquetaPeriodo();
+    $("kRetiroPct").textContent = pct(tot.retiro, tot.demanda) + " de la demanda";
+  }
+  $("kAtendidosPct").textContent = pct(tot.atendidos, tot.demanda) + " de la demanda";
+  const mesesAnio = Array.from({ length: 12 }, (_, i) => sumaGeneral(anio, i + 1).demanda || null);
+  U.sparkline("sDemanda", mesesAnio.slice(0, mesesAnio.reduce((k, v, i) => v ? i + 1 : k, 0)), COLOR.marino);
+
+  const c2 = sumaC2(anio, mes);
+  U.animar("kC2", pctNum(c2.menos31, c2.total), v => dec(v, 1) + "%");
+  if (ant) { const cA = sumaC2(ant.anio, ant.mes); U.variacion("kC2d", pctNum(c2.menos31, c2.total), pctNum(cA.menos31, cA.total), { sentido: 1, tipo: "pt", texto: vsAnt }); }
+  else $("kC2d").textContent = `${num(c2.menos31)} de ${num(c2.total)} C2`;
+
+  /* gráfico y tabla por clasificación */
+  grafico.data.labels = clas;
+  grafico.data.datasets[0].data = clas.map(k => grupos[k].demanda);
+  grafico.data.datasets[1].data = clas.map(k => grupos[k].atendidos);
+  grafico.data.datasets[2].data = clas.map(k => grupos[k].retiro);
+  grafico.update();
+  $("tBody").innerHTML = clas.map(k => { const g = grupos[k];
+    return `<tr><td>${U.esc(k)}</td><td>${num(g.demanda)}</td><td>${num(g.atendidos)}</td><td>${num(g.retiro)}</td><td>${pct(g.atendidos, g.demanda)}</td><td>${pct(g.retiro, g.demanda)}</td></tr>`; }).join("");
+  $("tFoot").innerHTML = `<tr><td>Total</td><td>${num(tot.demanda)}</td><td>${num(tot.atendidos)}</td><td>${num(tot.retiro)}</td><td>${pct(tot.atendidos, tot.demanda)}</td><td>${pct(tot.retiro, tot.demanda)}</td></tr>`;
+
+  /* evolución mensual */
+  const meses = [...new Set(datos.filter(d => d.anio == anio).map(d => d.mes))].sort((a, b) => a - b);
+  const porMes = meses.map(m => ({ m, ...sumaGeneral(anio, m) }));
+  graficoMes.data.labels = meses.map(m => MESES_CORTOS[m - 1]);
+  ["demanda", "atendidos", "retiro"].forEach((k, i) => {
+    graficoMes.data.datasets[i].data = porMes.map(x => x[k]);
+    graficoMes.data.datasets[i].pointRadius = porMes.map(x => mes && x.m == mes ? 8 : 4);
+  });
+  graficoMes.update();
+  const totA = sumaGeneral(anio, 0);
+  const filaMes = (nombre, t) => `<tr><td>${nombre}</td><td>${num(t.demanda)}</td><td>${num(t.atendidos)}</td><td>${num(t.retiro)}</td><td>${pct(t.atendidos, t.demanda)}</td><td>${pct(t.retiro, t.demanda)}</td></tr>`;
+  $("tMes").innerHTML = `<thead><tr><th>Mes</th><th>Demanda</th><th>Atendidos</th><th>Retiro sin alta</th><th>% Atendidos</th><th>% Retiro</th></tr></thead>
+    <tbody>${porMes.map(x => filaMes(MESES[x.m - 1], x)).join("")}</tbody><tfoot>${filaMes("Total " + anio, totA)}</tfoot>`;
+
+  /* C2 */
+  U.animar("c2Total", c2.total); U.animar("c2Mas30", c2.mas30); U.animar("c2Menos31", c2.menos31);
+  graficoC2.data.datasets[0].data = [c2.total, c2.mas30, c2.menos31];
+  graficoC2.update();
+  if (c2ColumnasOk) $("c2Nota").textContent = c2.sinTiempo ? `Hay ${num(c2.sinTiempo)} C2 sin tiempo registrado: cuentan en el total, pero no en los tramos.` : "";
+
+  /* demora de ingreso a cama (REM A08) */
+  const t = { menos12: 0, de12a24: 0, mas24: 0, permanecen: 0 };
+  const mesesD = datosD.filter(d => enPeriodo(d, anio, mes));
+  mesesD.forEach(d => D_ITEMS.forEach(i => t[i.clave] += d[i.clave]));
+  const totalD = t.menos12 + t.de12a24 + t.mas24 + t.permanecen;
+  graficoD.data.datasets[0].data = D_ITEMS.map(i => t[i.clave]);
+  graficoD.update();
+  U.animar("dTotal", totalD); U.animar("dMas24", t.mas24);
+  U.animar("dPct", pctNum(t.menos12, totalD), v => dec(v, 1) + "%");
+  $("dNota").textContent = mesesD.length ? "" : "No hay archivos REM (hoja A08) para el período elegido.";
 }
 
-async function cargarREM(anios) {
-  const ruta = await buscarCarpetaREM(anios);
-  if (!ruta) { datosD = []; return; }
-  RUTA_REM = ruta;
-  const tareas = [];
-  for (const anio of anios) for (let mes = 1; mes <= 12; mes++) {
-    tareas.push((async () => {
-      try {
-        const resp = await fetch(encodeURI(RUTA_REM(anio, mes)) + "?v=" + Date.now(), { cache: "no-store" });
-        if (!resp.ok) return null;                      // mes aún no cargado
-        const wb = XLSX.read(await resp.arrayBuffer(), { type: "array", sheets: [REM_HOJA] });
-        const d = leerSeccionD(wb);
-        return d ? { anio, mes, ...d } : null;
-      } catch (e) { console.warn("REM", anio, mes, e); return null; }
-    })());
-  }
-  datosD = (await Promise.all(tareas)).filter(Boolean);
-}
-
-async function cargarExcel() {
-  const aviso = document.getElementById("cargando");
-  if (location.protocol === "file:") {
-    aviso.classList.add("error");
-    aviso.innerHTML = "La página está abierta con doble clic (la dirección empieza con <b>file://</b>). " +
-      "Así el navegador bloquea la lectura del Excel.<br><small>Ábrela desde el servidor de la página " +
-      "(la dirección debe empezar con http:// o https://).</small>";
-    return;
-  }
+/* ---------- carga ---------- */
+async function cargar() {
+  if (U.avisoArchivoLocal()) return;
   try {
-    const resp = await fetch(RUTA_EXCEL + "?v=" + Date.now(), { cache: "no-store" });
-    if (!resp.ok) throw new Error(`No se encontró ${RUTA_EXCEL} (HTTP ${resp.status}).`);
-    const wb = XLSX.read(await resp.arrayBuffer(), { type: "array", cellDates: false, dense: true });
-    const hoja = wb.Sheets[wb.SheetNames[0]];
-    const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: "", raw: true });
-
-    const cab = filas[0].map(norm);
-    const iClas = cab.indexOf(norm(COL_CLASIFICACION));
-    const iEst  = cab.indexOf(norm(COL_ESTADO));
-    const iFec  = COL_FECHA.map(c => cab.indexOf(norm(c))).find(i => i >= 0) ?? -1;
-    const iCat  = cab.indexOf(norm(COL_CATEGORIA));
-    const iTie  = cab.indexOf(norm(COL_TIEMPO));
-    if (iClas < 0 || iEst < 0 || iFec < 0)
-      throw new Error(`Faltan columnas en el Excel: ${[iClas<0&&COL_CLASIFICACION, iEst<0&&COL_ESTADO, iFec<0&&COL_FECHA[0]].filter(Boolean).join(", ")}`);
-
-    /* Agrupa por año, mes y CLASIFICACION2 */
-    const acc = {}, accC2 = {};
-    for (let r = 1; r < filas.length; r++) {
-      const f = filas[r];
-      const clas = String(f[iClas] || "").trim().toUpperCase();
-      const fecha = parseFecha(f[iFec]);
-      if (!clas || !fecha) continue;
-      const anio = fecha.getFullYear(), mes = fecha.getMonth() + 1;
-      const key = anio + "|" + mes + "|" + clas;
-      const a = acc[key] ||= { anio, mes, clasificacion: clas, demanda: 0, atendidos: 0, retiro: 0 };
-      const est = String(f[iEst] || "").trim().toUpperCase();
-      a.demanda++;
-      if (est === "ATENDIDO") a.atendidos++;
-      else if (est === "RETIRO SIN ALTA") a.retiro++;
-
-      /* C2: atención médica niño y adulto + atendido + primera categorización C2 */
-      if (iCat >= 0 && norm(clas) === norm(C2_CLASIFICACION) && norm(est) === C2_ESTADO
-          && norm(f[iCat]) === C2_CATEGORIA) {
-        const c = accC2[anio + "|" + mes] ||= { anio, mes, total: 0, mas30: 0, menos31: 0, sinTiempo: 0 };
-        c.total++;
-        const min = iTie >= 0 ? parseMinutos(f[iTie]) : null;
-        if (min === null) c.sinTiempo++;
-        else if (min > C2_LIMITE_MIN) c.mas30++;
-        else c.menos31++;
-      }
-    }
-    datos = Object.values(acc);
-    datosC2 = Object.values(accC2);
-    aviso.textContent = "Cargando REM (A08 sección D)…";
-    await cargarREM([...new Set(datos.map(d => d.anio))]);
-    c2ColumnasOk = iCat >= 0 && iTie >= 0;
-    if (!c2ColumnasOk)
-      document.getElementById("c2Nota").textContent =
-        "No se encontró en el Excel la columna " + [iCat < 0 && COL_CATEGORIA, iTie < 0 && COL_TIEMPO].filter(Boolean).join(" ni ") +
-        ". Revisa el nombre en la configuración del código.";
-    aviso.style.display = "none";
-    llenarFiltros();
+    U.aviso("Cargando la base de urgencia…", { progreso: true });
+    const promesaREM = U.cargarREM("SA", "A08", leerSeccionD);     // el REM se lee al mismo tiempo que la base
+    const base = await U.abrirExcel(RUTAS_BASE, { cellDates: false, dense: true });
+    if (!base) throw new Error("No se encontró bdurgencia/l.urgencia.xlsx.");
+    leerBase(base.wb);
+    datosD = (await promesaREM).datos;
+    if (!c2ColumnasOk) $("c2Nota").textContent = `No se encontró en el Excel la columna ${COL_CATEGORIA} o ${COL_TIEMPO}.`;
+    if (!datos.length) throw new Error("La base no trae filas con fecha y clasificación.");
+    U.ocultarAviso();
+    U.filtrosPeriodo(datos, actualizar);
     actualizar();
+    const u = U.ultimoPeriodo(datos);
+    U.listo(U.textoActualizado(u.anio, u.mes));
   } catch (err) {
-    aviso.classList.add("error");
-    aviso.innerHTML = "No se pudieron cargar los datos: " + err.message +
-      "<br><small>Si abriste la página con doble clic (file://), el navegador bloquea la lectura del Excel: " +
-      "ábrela desde el servidor o con un servidor local.</small>";
     console.error(err);
+    U.aviso("No se pudieron cargar los datos: " + U.esc(err.message), { error: true });
+    U.listo("Sin datos");
   }
 }
-
-cargarExcel();
+cargar();
 </script>
 </body>
 </html>

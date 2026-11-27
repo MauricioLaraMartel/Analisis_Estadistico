@@ -3,260 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Producción · Pabellón | Hospital San Luis de Buin-Paine</title>
+  <title>Pabellón | Unidad de Estadística · Hospital San Luis de Buin-Paine</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Estilos propios de esta página (van después de estilos.css) -->
-  <style>
-    [hidden] { display: none !important; }
-
-    /* Alto de los gráficos según la pantalla: siempre caben completos a la vista
-       (mínimo para celular, máximo para monitores grandes) */
-    :root {
-      --alto-grafico: clamp(260px, calc(100vh - 360px), 640px);
-      --alto-grafico-medio: clamp(260px, calc(100vh - 320px), 600px);
-    }
-
-    /* ---------- Cabecera ---------- */
-    .cabecera-pagina {
-      background: linear-gradient(135deg, var(--azul-marino) 0%, var(--azul) 100%);
-      color: var(--blanco);
-      padding: clamp(28px, 4vw, 56px) 0 clamp(30px, 4.5vw, 60px);
-    }
-    .cabecera-pagina h1 {
-      color: var(--blanco);
-      font-size: clamp(1.4rem, 1rem + 2vw, 2.6rem);
-      text-wrap: balance;
-    }
-
-    /* ---------- Contenido ---------- */
-    .contenido { padding: clamp(20px, 3vw, 48px) 0 clamp(10px, 1.5vw, 24px); }
-    .tarjeta {
-      background: var(--blanco);
-      border-radius: 12px;
-      box-shadow: var(--sombra);
-      padding: clamp(14px, 1.8vw, 30px);
-      margin-bottom: clamp(16px, 2vw, 32px);
-      min-width: 0;
-    }
-    .tarjeta h2 { font-size: clamp(1.1rem, 0.95rem + 0.6vw, 1.6rem); }
-
-    /* Filtros */
-    .filtros { display: flex; flex-wrap: wrap; gap: clamp(10px, 1.4vw, 20px); align-items: flex-end; }
-    .filtros label {
-      display: flex; flex-direction: column; gap: 4px;
-      font-size: 0.8rem; font-weight: 500; color: var(--texto-suave);
-      text-transform: uppercase; letter-spacing: 0.5px;
-      flex: 1 1 min(200px, 100%); min-width: 0;
-    }
-    select {
-      font: inherit; font-size: 1rem; text-transform: none; letter-spacing: 0;
-      min-height: 44px; padding: 8px 12px; width: 100%;
-      border: 1px solid var(--borde); border-radius: var(--radio);
-      background: var(--blanco); color: var(--azul-marino);
-    }
-    select:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
-
-    /* Indicadores por tipo de quirófano */
-    /* Electiva arriba y urgencia debajo */
-    .grupos {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: clamp(12px, 1.5vw, 24px);
-      margin-bottom: clamp(16px, 2vw, 28px);
-    }
-    .grupo h3 {
-      font-size: clamp(0.95rem, 0.9rem + 0.3vw, 1.2rem);
-      margin-bottom: 10px;
-      color: var(--azul-marino);
-    }
-    .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(8px, 1vw, 14px); width: 100%; }
-    .kpi {
-      border-left: 5px solid var(--azul);
-      background: var(--azul-claro);
-      border-radius: var(--radio);
-      padding: clamp(10px, 1vw, 16px) clamp(10px, 1.1vw, 16px);
-      min-width: 0;
-    }
-    .kpi span {
-      display: block; font-size: clamp(0.68rem, 0.64rem + 0.18vw, 0.82rem); color: var(--texto-suave);
-      text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500;
-    }
-    .kpi b {
-      display: block; color: var(--azul-marino);
-      font-size: clamp(1.15rem, 0.9rem + 1vw, 1.9rem); line-height: 1.2;
-      overflow-wrap: anywhere; font-variant-numeric: tabular-nums;
-    }
-    .kpi.hab { border-color: var(--azul-marino); }
-    .kpi.ocu { border-color: var(--azul); }
-    .kpi.pct { background: var(--azul-marino); border-color: var(--rojo); }
-    .kpi.pct span { color: #c9d3e0; }
-    .kpi.pct b { color: var(--blanco); }
-
-    /* Gráfico */
-    .chart-box { position: relative; width: 100%; height: var(--alto-grafico); }
-
-    /* Fila de dos columnas: el gráfico de suspensión va a la izquierda */
-    .dos-columnas {
-      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: clamp(16px, 2vw, 32px); align-items: start;
-    }
-    .dos-columnas .tarjeta { margin-bottom: clamp(16px, 2vw, 32px); }
-    .dos-columnas .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: clamp(14px, 1.6vw, 22px); }
-    .chart-box.medio { height: var(--alto-grafico-medio); }
-    /* Mientras haya un solo gráfico en la fila, ocupa todo el ancho;
-       al agregar el segundo, quedan uno al lado del otro */
-    .dos-columnas:has(> .tarjeta:only-child) { grid-template-columns: 1fr; }
-    .kpi.prog { border-color: var(--azul); }
-
-    /* Tabla de intervenciones (tipo, procedencia, estado) */
-    .tabla-interv td, .tabla-interv th { text-align: left; }
-    .tabla-interv td:last-child, .tabla-interv th:last-child { text-align: right; }
-    .tabla-interv td:last-child { font-weight: 700; color: var(--azul-marino); }
-    .tabla-interv tbody tr.inicio-tipo td { border-top: 2px solid var(--azul); }
-    .tabla-interv tbody tr:first-child td { border-top: 0; }
-    .kpi.susp { border-color: var(--rojo); }
-    @media (max-width: 1000px) {
-      .dos-columnas { grid-template-columns: 1fr; }
-    }
-
-    /* Tabla mensual */
-    details { margin-top: clamp(16px, 2vw, 24px); }
-    summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 500; color: var(--azul); }
-    @media (hover: hover) { summary:hover { color: var(--azul-oscuro); } }
-    .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; }
-    table { border-collapse: collapse; width: 100%; font-size: clamp(0.75rem, 0.72rem + 0.2vw, 0.95rem); font-variant-numeric: tabular-nums; }
-    th, td { padding: clamp(5px, 0.6vw, 10px) clamp(6px, 0.7vw, 12px); border-bottom: 1px solid var(--borde); text-align: right; white-space: nowrap; }
-    th { background: var(--azul-marino); color: var(--blanco); font-weight: 500; font-size: clamp(0.68rem, 0.64rem + 0.15vw, 0.8rem); text-transform: uppercase; letter-spacing: 0.4px; }
-    th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--blanco); z-index: 1; }
-    th:first-child { background: var(--azul-marino); }
-    tbody tr:nth-child(even) td { background: var(--gris-fondo); }
-    /* Encabezado en dos filas: "Electiva" y "Urgencia" arriba, columnas angostas abajo */
-    thead th { white-space: normal; line-height: 1.25; vertical-align: bottom; }
-    thead th.grupo-col { text-align: center; border-bottom: 2px solid var(--rojo); }
-    thead tr:first-child th:first-child { vertical-align: middle; }
-    th.ini, td.ini { border-left: 2px solid var(--borde); }
-    thead th.ini { border-left-color: rgba(255, 255, 255, 0.25); }
-    /* la primera celda de la 2ª fila del encabezado no es la columna "Mes" */
-    thead tr + tr th:first-child { text-align: right; position: static; }
-    tfoot td { font-weight: 700; background: var(--azul-claro); color: var(--azul-marino); border-top: 2px solid var(--azul); }
-
-    #aviso {
-      padding: 14px 18px; border-radius: var(--radio); background: var(--azul-claro); color: var(--azul);
-      border-left: 5px solid var(--azul); font-weight: 500; margin-bottom: clamp(16px, 2vw, 24px);
-      overflow-wrap: anywhere;
-    }
-    #aviso.error { background: #fdecec; color: #b3242c; border-left-color: var(--rojo); }
-
-    /* Celular */
-    @media (max-width: 480px) {
-      .kpis, .dos-columnas .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .kpi.pct { grid-column: 1 / -1; }
-    }
-    /* Celular acostado o pantallas muy bajas */
-    @media (max-height: 500px) {
-      :root { --alto-grafico: 280px; --alto-grafico-medio: 280px; }
-    }
-    /* Celular: alto cómodo para leer las barras */
-    @media (max-width: 480px) {
-      :root { --alto-grafico: clamp(260px, 55vh, 420px); --alto-grafico-medio: clamp(240px, 50vh, 380px); }
-    }
-  </style>
 </head>
-<body>
-
-  <div class="barra-gobierno">
-    <span class="azul"></span>
-    <span class="rojo"></span>
-  </div>
-
-  <header class="encabezado">
-    <div class="contenedor encabezado-fila">
-      <a href="index.html" class="marca">
-        <div class="marca-texto">
-          <span class="marca-red">Servicio de Salud Metropolitano Sur</span>
-          <strong>Hospital San Luis de Buin-Paine</strong>
-          <span class="marca-unidad">Unidad de Estadística</span>
-        </div>
-      </a>
-      <nav class="menu">
-        <a href="index.html#Produccion" id="btnVolver">⟵ Inicio</a>
-        <a href="manuales.html">Manuales</a>
-        <a href="index.html#contacto">Contacto</a>
-      </nav>
-    </div>
-  </header>
+<body data-pagina="pabellon" class="cargando">
 
   <section class="cabecera-pagina">
-    <div class="contenedor">
-      <h1>Producción · Pabellón</h1>
+    <div class="contenedor cabecera-fila">
+      <span class="cabecera-icono" data-icono="pabellon"></span>
+      <div class="cabecera-texto">
+        <h1>Pabellón</h1>
+      </div>
     </div>
+    <div class="acento"></div>
   </section>
 
-  <main class="contenido fondo-gris">
+  <main class="contenido">
     <div class="contenedor">
 
-      <div id="aviso">Cargando REM A21…</div>
+      <div id="aviso" class="aviso">Cargando REM A21…</div>
 
       <!-- FILTROS -->
       <section class="tarjeta filtros">
-        <label for="fAnio">Año<select id="fAnio"></select></label>
-        <label for="fMes">Mes<select id="fMes"></select></label>
+        <div class="filtros-campos">
+          <label for="fAnio">Año<select id="fAnio"></select></label>
+          <label for="fMes">Mes<select id="fMes"></select></label>
+        </div>
+        <div class="acciones">
+          <button type="button" class="boton-accion" data-exportar><span data-icono="descargar" data-tam="18"></span>Descargar Excel</button>
+          <button type="button" class="boton-accion" data-imprimir><span data-icono="imprimir" data-tam="18"></span>Imprimir</button>
+        </div>
       </section>
 
-      <!-- INDICADORES + GRÁFICO -->
+      <!-- OCUPACIÓN DE QUIRÓFANOS (A21 SECCIÓN A) -->
       <article class="tarjeta">
         <h2>Ocupación de quirófanos</h2>
-
         <div class="grupos">
           <div class="grupo">
             <h3>Quirófano de cirugía electiva</h3>
-            <div class="kpis">
-              <div class="kpi hab"><span>Horas habilitadas</span><b id="eHab">–</b></div>
-              <div class="kpi ocu"><span>Horas ocupadas</span><b id="eOcu">–</b></div>
-              <div class="kpi pct"><span>% de ocupación</span><b id="ePct">–</b></div>
+            <div class="kpis tres">
+              <div class="kpi marino"><span>Horas habilitadas</span><b id="eHab">–</b></div>
+              <div class="kpi"><span>Horas ocupadas</span><b id="eOcu">–</b></div>
+              <div class="kpi destacado"><span>% de ocupación</span><b id="ePct">–</b><small id="ePctD">&nbsp;</small><div class="medidor"><div id="eBar"></div></div></div>
             </div>
           </div>
           <div class="grupo">
             <h3>Quirófano de urgencia</h3>
-            <div class="kpis">
-              <div class="kpi hab"><span>Horas habilitadas</span><b id="uHab">–</b></div>
-              <div class="kpi ocu"><span>Horas ocupadas</span><b id="uOcu">–</b></div>
-              <div class="kpi pct"><span>% de ocupación</span><b id="uPct">–</b></div>
+            <div class="kpis tres">
+              <div class="kpi marino"><span>Horas habilitadas</span><b id="uHab">–</b></div>
+              <div class="kpi"><span>Horas ocupadas</span><b id="uOcu">–</b></div>
+              <div class="kpi destacado"><span>% de ocupación</span><b id="uPct">–</b><small id="uPctD">&nbsp;</small><div class="medidor"><div id="uBar"></div></div></div>
             </div>
           </div>
         </div>
-
-        <div class="chart-box"><canvas id="grafico"></canvas></div>
-
+        <div class="chart-box bajo"><canvas id="graficoOcu"></canvas></div>
         <details>
           <summary>Ver detalle por mes</summary>
           <div class="scroll"><table id="tabla"></table></div>
         </details>
       </article>
 
-      <!-- SUSPENSIÓN DE CIRUGÍAS ELECTIVAS (A21 SECCIÓN E) — columna izquierda -->
       <div class="dos-columnas">
+        <!-- SUSPENSIÓN DE CIRUGÍAS ELECTIVAS (A21 SECCIÓN E) -->
         <article class="tarjeta">
           <h2>Suspensión de cirugías electivas</h2>
-          <div class="kpis">
-            <div class="kpi prog"><span>Pacientes programados</span><b id="sProg">–</b></div>
-            <div class="kpi susp"><span>Pacientes suspendidos</span><b id="sSusp">–</b></div>
-            <div class="kpi pct"><span>% de suspensión</span><b id="sPct">–</b></div>
+          <div class="kpis tres">
+            <div class="kpi"><span>Programados</span><b id="sProg">–</b></div>
+            <div class="kpi rojo"><span>Suspendidos</span><b id="sSusp">–</b></div>
+            <div class="kpi destacado"><span>% de suspensión</span><b id="sPct">–</b><small id="sPctD">&nbsp;</small></div>
           </div>
-          <div class="chart-box medio"><canvas id="graficoSusp"></canvas></div>
+          <div class="chart-box bajo"><canvas id="graficoSusp"></canvas></div>
         </article>
-        <!-- INTERVENCIONES POR TIPO, PROCEDENCIA Y ESTADO (base l.pabellon) — columna derecha -->
+
+        <!-- INTERVENCIONES (base l.pabellon) -->
         <article class="tarjeta">
           <h2>Intervenciones quirúrgicas</h2>
-          <div class="kpis">
-            <div class="kpi hab"><span>Cirugías mayores</span><b id="tCmay">–</b></div>
-            <div class="kpi ocu"><span>Cirugías menores</span><b id="tCmen">–</b></div>
-            <div class="kpi susp"><span>Procedimientos</span><b id="tProc">–</b></div>
+          <div class="kpis tres">
+            <div class="kpi marino"><span>Cirugías mayores</span><b id="tCmay">–</b><small id="tCmayD">&nbsp;</small></div>
+            <div class="kpi"><span>Cirugías menores</span><b id="tCmen">–</b></div>
+            <div class="kpi rojo"><span>Procedimientos</span><b id="tProc">–</b></div>
           </div>
           <div class="scroll"><table id="tablaInterv" class="tabla-interv"></table></div>
         </article>
@@ -265,394 +96,207 @@
     </div>
   </main>
 
-  <footer class="pie">
-    <div class="contenedor">
-      <strong>Hospital San Luis de Buin-Paine</strong>
-      <p>Unidad de Estadística · Servicio de Salud Metropolitano Sur</p>
-      <p class="pie-nota">Datos agregados. No contiene información de pacientes.</p>
-    </div>
-  </footer>
-
+<script src="comun.js"></script>
 <script>
 /* =====================================================================
-   RUTA DE LOS REM (relativa a este archivo .html)
-     PAGINA ESTADÍSTICA/
-       ├─ pabellon.html            ← esta página
-       └─ REM/
-            └─ 2026/
-                 └─ REM_SA/        (o REM_A)
-                      ├─ SA_01.xlsm
-                      ├─ …
-                      └─ SA_12.xlsm
-   La página busca sola la carpeta correcta. Los meses o años que aún
-   no existen se omiten sin error.
+   DATOS DE ESTA PÁGINA
+     · REM SA, hoja A21 (secciones A y E)     → REM/<año>/REM_SA/SA_xx.xlsm
+     · Base de intervenciones                  → bdpabellon/l.pabellon.xlsx
    ===================================================================== */
-/* La página prueba sola estas combinaciones y usa la primera donde encuentre archivos */
-const CARPETAS    = ["REM_SA", "REM_A", "REM SA", "REM A"];   // carpeta dentro de REM/<año>/
-const PREFIJOS    = ["", "../", "PAGINA ESTADÍSTICA/", "PAGINA ESTADISTICA/"]; // dónde está la carpeta REM respecto de esta página
-const EXTENSIONES = [".xlsm", ".xlsx", ".xls"];
-const ANIO_DESDE  = 2024;                                       // primer año que se busca
-let RUTA_REM = null;                                            // se define al encontrar los archivos
 const HOJA = "A21";
-const SECCION_INICIO = "Produccion";                // id de la sección en index.html
-
-/* Filas y columnas de la Sección A que se usan (se buscan por su texto) */
 const FILAS = { electiva: "DE CIRUGIA ELECTIVA", urgencia: "DE URGENCIA" };
 const COL_HAB = "TOTAL DE HORAS MENSUALES DE QUIROFANOS HABILITADOS (HORARIO HABIL)";
 const COL_OCU = "HORAS MENSUALES OCUPADAS DE QUIROFANOS EN TRABAJO HORARIO HABIL";
+/* Sección E, fila TOTAL: programados = F + G · suspendidos = H + I (horario hábil) */
+const COLS_E = { prog: ["F", "G"], susp: ["H", "I"] };
 
-const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-/* Colores institucionales Hospital San Luis de Buin-Paine */
-const COLOR = { hab: "#0a132d", ocu: "#0f69b4", rojo: "#eb3c46" };
-
-let datos = [];   // { anio, mes, electiva:{hab,ocu}, urgencia:{hab,ocu}, suspension:{prog,susp} }
-
-/* Base de intervenciones: PAGINA ESTADÍSTICA/bdpabellon/l.pabellon.xlsx */
 const RUTAS_BASE = ["bdpabellon/l.pabellon.xlsx", "bdpabellon/l_pabellon.xlsx"];
 const COL_FECHA = "FECING", COL_TIPO = "TIPO COD 1", COL_PROC = "PROCED", COL_ESTADO = "PLANILLA EGRESO HOSP";
-const COMBINACIONES = [];
-for (const tipo of ["CMAY", "CMEN", "PROC"])
-  for (const proc of ["ELECTIVA", "URGENCIA"])
-    for (const estado of ["HOSPITALIZADO", "AMBULATORIO"]) COMBINACIONES.push({ tipo, proc, estado });
-let base = null;  // { anio, mes, tipo, proc, estado }
+const TIPOS = [["CMAY", "Cirugía mayor"], ["CMEN", "Cirugía menor"], ["PROC", "Procedimiento"]];
 
-/* ---------- utilidades ---------- */
-const norm = v => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
-const hrs  = n => n == null ? "–" : Number(n).toLocaleString("es-CL", { maximumFractionDigits: 1 });
-const num  = n => Number(n || 0).toLocaleString("es-CL");
-const pct  = (a, b) => b ? (a / b * 100).toLocaleString("es-CL", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%" : "–";
-const $ = id => document.getElementById(id);
+const { $, norm, num, dec, pct, MESES, MESES_CORTOS, COLOR, graf } = U;
+const hrs = v => v == null ? "–" : Number(v).toLocaleString("es-CL", { maximumFractionDigits: 1 });
+let datos = [], base = [];
 
-/* ---------- botón Inicio: index.html en esta carpeta o en la de arriba ---------- */
-(async () => {
-  for (const ruta of ["index.html", "../index.html"]) {
-    try { const r = await fetch(ruta, { method: "HEAD", cache: "no-store" });
-          if (r.ok) { $("btnVolver").href = ruta + "#" + SECCION_INICIO; return; } } catch (e) {}
-  }
-})();
-
-/* ---------- lectura de la hoja A21, sección A ---------- */
-function leerSeccionA(wb) {
+/* ---------- lectura de la hoja A21 ---------- */
+function leerA21(wb) {
   const hoja = wb.Sheets[HOJA];
   if (!hoja) return null;
   const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: "", raw: true });
-  const ini = filas.findIndex(f => f.some(c => norm(c).startsWith("SECCION A")));
-  if (ini < 0) return null;
-  const fin = filas.findIndex((f, i) => i > ini && f.some(c => norm(c).startsWith("SECCION B")));
-  const bloque = filas.slice(ini, fin < 0 ? ini + 15 : fin);
+  const buscar = (txt, desde = 0) => filas.findIndex((f, i) => i >= desde && f.some(c => norm(c).startsWith(txt)));
 
-  const columna = texto => {
-    for (const f of bloque) { const i = f.findIndex(c => norm(c) === texto); if (i >= 0) return i; }
-    return -1;
-  };
-  const cHab = columna(COL_HAB), cOcu = columna(COL_OCU);
-  if (cHab < 0 || cOcu < 0) return null;
-
-  const res = {};
-  for (const [clave, texto] of Object.entries(FILAS)) {
-    const f = bloque.find(f => norm(f[0]) === texto);
-    res[clave] = { hab: f ? Number(f[cHab]) || 0 : 0, ocu: f ? Number(f[cOcu]) || 0 : 0 };
-  }
-  return res;
-}
-
-/* ---------- lectura de la hoja A21, sección E (fila TOTAL) ----------
-   Pacientes programados = F + G   ·   Pacientes suspendidos = H + I   (horario hábil) */
-const COLS_E = { prog: ["F", "G"], susp: ["H", "I"] };
-const colNum = letra => letra.charCodeAt(0) - 65;      // "A" → 0, "F" → 5 …
-function leerSeccionE(wb) {
-  const hoja = wb.Sheets[HOJA];
-  if (!hoja) return null;
-  const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: "", raw: true });
-  const ini = filas.findIndex(f => f.some(c => norm(c).startsWith("SECCION E")));
-  if (ini < 0) return null;
-  let fin = filas.findIndex((f, i) => i > ini && f.some(c => norm(c).startsWith("SECCION F")));
-  if (fin < 0) fin = ini + 40;
-  const total = filas.slice(ini, fin).find(f => norm(f[0]) === "TOTAL");
-  if (!total) return null;
-  const suma = cols => cols.reduce((t, c) => t + (Number(total[colNum(c)]) || 0), 0);
-  return { prog: suma(COLS_E.prog), susp: suma(COLS_E.susp) };
-}
-
-/* Busca en qué carpeta y con qué extensión están los SA_xx */
-async function existe(url) {
-  try {
-    const r = await fetch(encodeURI(url), { method: "HEAD", cache: "no-store" });
-    if (r.ok) return true;
-    if (r.status === 405 || r.status === 501) {            // servidores que no aceptan HEAD
-      const g = await fetch(encodeURI(url), { cache: "no-store" });
-      return g.ok;
-    }
-  } catch (e) {}
-  return false;
-}
-async function buscarCarpeta(anios) {
-  const probadas = [];
-  for (const pre of PREFIJOS) for (const car of CARPETAS) for (const ext of EXTENSIONES) {
-    const ruta = (anio, mes) => `${pre}REM/${anio}/${car}/SA_${String(mes).padStart(2, "0")}${ext}`;
-    probadas.push(ruta("&lt;año&gt;", "01").replace("SA_01", "SA_xx"));
-    for (const anio of anios) {
-      const hay = await Promise.all(Array.from({ length: 12 }, (_, i) => existe(ruta(anio, i + 1))));
-      if (hay.some(Boolean)) return { ruta, probadas };
-    }
-  }
-  return { ruta: null, probadas };
-}
-
-/* ---------- lectura de la base l.pabellon.xlsx ---------- */
-function anioMes(v) {
-  if (typeof v === "number") { const d = XLSX.SSF.parse_date_code(v); return d ? { anio: d.y, mes: d.m } : null; }
-  const t = String(v).trim();
-  let m = t.match(/^(\d{4})[-\/](\d{1,2})/);              // 2026-01-31
-  if (m) return { anio: +m[1], mes: +m[2] };
-  m = t.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);  // 31-01-2026
-  if (m) return { anio: +m[3], mes: +m[2] };
-  return null;
-}
-async function cargarBase() {
-  for (const pre of PREFIJOS) for (const ruta of RUTAS_BASE) {
-    try {
-      const r = await fetch(encodeURI(pre + ruta) + "?v=" + Date.now(), { cache: "no-store" });
-      if (!r.ok) continue;
-      const wb = XLSX.read(await r.arrayBuffer(), { type: "array", cellDates: false });
-      const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "", raw: true });
-      if (!filas.length) continue;
-      const claves = Object.keys(filas[0]);
-      const col = texto => claves.find(k => norm(k).startsWith(texto));
-      const cF = col(COL_FECHA), cT = col(COL_TIPO), cP = col(COL_PROC), cE = col(COL_ESTADO);
-      if (!cF || !cT || !cP || !cE) continue;
-      return filas.map(f => {
-        const am = anioMes(f[cF]);
-        return am && { ...am, tipo: norm(f[cT]), proc: norm(f[cP]), estado: norm(f[cE]) };
-      }).filter(Boolean);
-    } catch (e) {}
-  }
-  return null;
-}
-
-async function cargar() {
-  const aviso = $("aviso");
-  const hoy = new Date().getFullYear();
-
-  /* Abierta con doble clic: el navegador no deja leer archivos */
-  if (location.protocol === "file:") {
-    aviso.classList.add("error");
-    aviso.innerHTML = "La página está abierta con doble clic (la dirección empieza con <b>file://</b>). " +
-      "Así el navegador bloquea la lectura de los REM.<br><small>Ábrela desde el servidor de la página " +
-      "(la dirección debe empezar con http:// o https://).</small>";
-    return;
-  }
-
-  aviso.textContent = "Buscando los archivos REM…";
-  const promesaBase = cargarBase();                      // la base se lee al mismo tiempo que los REM
-  const errores = [];
-  const anios = []; for (let a = hoy; a >= ANIO_DESDE; a--) anios.push(a);
-  const { ruta, probadas } = await buscarCarpeta(anios);
-  if (!ruta) {
-    errores.push("No se encontraron los archivos SA_01 … SA_12. Rutas probadas (relativas a esta página):" +
-      "<br><small>" + probadas.join("<br>") + "</small>");
-  } else {
-  RUTA_REM = ruta;
-  aviso.textContent = "Cargando REM A21…";
-  const tareas = [];
-  for (let anio = ANIO_DESDE; anio <= hoy; anio++) for (let mes = 1; mes <= 12; mes++) {
-    tareas.push((async () => {
-      try {
-        const r = await fetch(encodeURI(RUTA_REM(anio, mes)) + "?v=" + Date.now(), { cache: "no-store" });
-        if (!r.ok) return null;
-        const wb = XLSX.read(await r.arrayBuffer(), { type: "array", sheets: [HOJA] });
-        const a = leerSeccionA(wb), e = leerSeccionE(wb);
-        if (!a && !e) return null;
-        return { anio, mes,
-                 electiva: a ? a.electiva : { hab: 0, ocu: 0 },
-                 urgencia: a ? a.urgencia : { hab: 0, ocu: 0 },
-                 suspension: e || { prog: 0, susp: 0 } };
-      } catch (e) { return null; }
-    })());
-  }
-  datos = (await Promise.all(tareas)).filter(Boolean);
-  if (!datos.length)
-    errores.push(`Se encontraron archivos en <b>${RUTA_REM("&lt;año&gt;", "xx")}</b>, pero ninguno trae la hoja ` +
-      `<b>${HOJA}</b> con la Sección A. Revisa que sean los REM SA correctos.`);
-  }
-
-  base = await promesaBase;
-  if (!base) errores.push("No se encontró la base <b>bdpabellon/l.pabellon.xlsx</b> (o le faltan las columnas " +
-    "FECING, TIPO COD 1, PROCED o PLANILLA EGRESO HOSP).");
-
-  if (errores.length) { aviso.classList.add("error"); aviso.innerHTML = errores.join("<br><br>"); }
-  else aviso.hidden = true;
-  if (!datos.length && !(base && base.length)) return;
-  llenarFiltros();
-  actualizar();
-}
-
-/* ---------- filtros ---------- */
-function llenarFiltros() {
-  const anios = [...new Set([...datos, ...(base || [])].map(d => d.anio))].sort((a, b) => b - a);
-  $("fAnio").innerHTML = anios.map(a => `<option value="${a}">${a}</option>`).join("");
-  $("fAnio").value = anios[0];
-  llenarMeses();
-}
-function llenarMeses() {
-  const previo = $("fMes").value;
-  const meses = [...new Set([...datos, ...(base || [])].filter(d => d.anio == $("fAnio").value).map(d => d.mes))].sort((a, b) => a - b);
-  $("fMes").innerHTML = '<option value="">Todos (acumulado)</option>' +
-    meses.map(m => `<option value="${m}">${MESES[m - 1]}</option>`).join("");
-  if (meses.includes(Number(previo))) $("fMes").value = previo;
-}
-$("fAnio").addEventListener("change", () => { llenarMeses(); actualizar(); });
-$("fMes").addEventListener("change", actualizar);
-
-/* ---------- gráfico (se adapta al ancho de la pantalla) ---------- */
-Chart.register(ChartDataLabels);
-Chart.defaults.font.family = '"Roboto", Arial, sans-serif';
-Chart.defaults.color = "#5f6b7a";
-const tam = (ctx, chico, grande) => { const w = ctx.chart.width || 800; return w < 420 ? chico : w < 700 ? Math.round((chico + grande) / 2) : grande; };
-const fuenteEje   = ctx => ({ size: tam(ctx, 11, 14), weight: "500" });
-const fuenteValor = ctx => ({ size: tam(ctx, 10, 13), weight: "600" });
-
-/* Gráfico horizontal: quirófano de cirugía electiva arriba, quirófano de urgencia debajo.
-   Cada uno con sus barras de horas habilitadas y horas ocupadas (solo horas). */
-const grafico = new Chart($("grafico"), {
-  type: "bar",
-  data: {
-    labels: [["Quirófano de", "cirugía electiva"], ["Quirófano", "de urgencia"]],
-    datasets: [
-      { label: "Horas habilitadas", data: [0, 0], backgroundColor: COLOR.hab, borderRadius: 6, maxBarThickness: 56, categoryPercentage: 0.7 },
-      { label: "Horas ocupadas",    data: [0, 0], backgroundColor: COLOR.ocu, borderRadius: 6, maxBarThickness: 56, categoryPercentage: 0.7 }
-    ]
-  },
-  options: {
-    indexAxis: "y",
-    responsive: true, maintainAspectRatio: false, resizeDelay: 100,
-    layout: { padding: { right: 8 } },
-    plugins: {
-      legend: {
-        position: "top", align: "start",
-        labels: { usePointStyle: true, pointStyle: "rectRounded", color: "#0a132d", font: fuenteEje }
-      },
-      tooltip: {
-        backgroundColor: "#0a132d", titleColor: "#fff", bodyColor: "#e8f1fa", padding: 10, cornerRadius: 8,
-        callbacks: {
-          title: items => items[0].label.replace(",", " "),
-          label: ctx => ` ${ctx.dataset.label}: ${hrs(ctx.raw)} h`
-        }
-      },
-      datalabels: {
-        anchor: "end", align: "end", offset: 4, clamp: true,
-        font: fuenteValor, color: "#0a132d",
-        formatter: v => `${hrs(v)} h`                  // solo las horas
+  /* Sección A */
+  let a = null;
+  const iA = buscar("SECCION A");
+  if (iA >= 0) {
+    const finA = buscar("SECCION B", iA + 1);
+    const bloque = filas.slice(iA, finA < 0 ? iA + 15 : finA);
+    const columna = texto => { for (const f of bloque) { const i = f.findIndex(c => norm(c) === texto); if (i >= 0) return i; } return -1; };
+    const cHab = columna(COL_HAB), cOcu = columna(COL_OCU);
+    if (cHab >= 0 && cOcu >= 0) {
+      a = {};
+      for (const [clave, texto] of Object.entries(FILAS)) {
+        const f = bloque.find(f => norm(f[0]) === texto);
+        a[clave] = { hab: f ? Number(f[cHab]) || 0 : 0, ocu: f ? Number(f[cOcu]) || 0 : 0 };
       }
-    },
-    scales: {
-      x: { beginAtZero: true, grace: "15%", title: { display: true, text: "Horas", font: fuenteEje },
-           ticks: { callback: v => hrs(v), font: fuenteEje }, grid: { color: "#dde3ea" }, border: { display: false } },
-      y: { grid: { display: false }, ticks: { color: "#0a132d", font: fuenteEje } }
     }
+  }
+  /* Sección E */
+  let e = null;
+  const iE = buscar("SECCION E");
+  if (iE >= 0) {
+    let finE = buscar("SECCION F", iE + 1); if (finE < 0) finE = iE + 40;
+    const total = filas.slice(iE, finE).find(f => norm(f[0]) === "TOTAL");
+    if (total) {
+      const suma = cols => cols.reduce((t, c) => t + (Number(total[c.charCodeAt(0) - 65]) || 0), 0);
+      e = { prog: suma(COLS_E.prog), susp: suma(COLS_E.susp) };
+    }
+  }
+  if (!a && !e) return null;
+  return { electiva: a ? a.electiva : { hab: 0, ocu: 0 }, urgencia: a ? a.urgencia : { hab: 0, ocu: 0 }, suspension: e || { prog: 0, susp: 0 } };
+}
+
+/* ---------- lectura de la base l.pabellon ---------- */
+async function cargarBase() {
+  const r = await U.abrirExcel(RUTAS_BASE, { cellDates: false });
+  if (!r) return null;
+  const filas = XLSX.utils.sheet_to_json(r.wb.Sheets[r.wb.SheetNames[0]], { defval: "", raw: true });
+  if (!filas.length) return null;
+  const claves = Object.keys(filas[0]);
+  const col = texto => claves.find(k => norm(k).startsWith(texto));
+  const cF = col(COL_FECHA), cT = col(COL_TIPO), cP = col(COL_PROC), cE = col(COL_ESTADO);
+  if (!cF || !cT || !cP || !cE) return null;
+  return filas.map(f => { const am = U.anioMes(f[cF]); return am && { ...am, tipo: norm(f[cT]), proc: norm(f[cP]), estado: norm(f[cE]) }; }).filter(Boolean);
+}
+
+/* ---------- gráficos ---------- */
+const graficoOcu = new Chart($("graficoOcu"), {
+  type: "line",
+  data: { labels: [], datasets: [["Electiva", COLOR.marino], ["Urgencia", COLOR.azul]].map(([label, c]) =>
+    ({ label, data: [], borderColor: c, backgroundColor: c, borderWidth: 3, tension: 0.25, pointRadius: 4, pointHoverRadius: 7 })) },
+  options: {
+    interaction: { mode: "index", intersect: false },
+    plugins: { legend: graf.leyenda,
+      tooltip: { ...graf.tooltip, callbacks: { ...graf.tooltip.callbacks, label: ctx => ` ${ctx.dataset.label}: ${dec(ctx.raw, 1)}%` } },
+      datalabels: { display: ctx => ctx.chart.width >= 700, align: "top", offset: 4, color: ctx => ctx.dataset.borderColor, font: graf.fuenteValor, formatter: v => v == null ? "" : dec(v, 0) + "%" } },
+    scales: { y: { ...graf.ejeValores, suggestedMax: 100, ticks: { ...graf.ejeValores.ticks, callback: v => v + "%" } },
+              x: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje } } }
   }
 });
-
-/* ---------- gráfico de suspensión (solo cantidades en las barras) ---------- */
 const graficoSusp = new Chart($("graficoSusp"), {
   type: "bar",
-  data: {
-    labels: [["Pacientes", "programados"], ["Pacientes", "suspendidos"]],
-    datasets: [{ label: "Pacientes", data: [0, 0], backgroundColor: [COLOR.ocu, COLOR.rojo],
-                 borderRadius: 6, maxBarThickness: 120 }]
-  },
+  data: { labels: [["Pacientes", "programados"], ["Pacientes", "suspendidos"]],
+          datasets: [{ label: "Pacientes", data: [0, 0], backgroundColor: [COLOR.azul, COLOR.rojo], borderRadius: 6, maxBarThickness: 120 }] },
   options: {
-    responsive: true, maintainAspectRatio: false, resizeDelay: 100,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "#0a132d", titleColor: "#fff", bodyColor: "#e8f1fa", padding: 10, cornerRadius: 8,
-        callbacks: { title: items => items[0].label.replace(",", " "), label: ctx => ` ${num(ctx.raw)} pacientes` }
-      },
-      datalabels: { anchor: "end", align: "end", offset: 2, color: "#0a132d", font: fuenteValor, formatter: v => num(v) }
-    },
-    scales: {
-      y: { beginAtZero: true, grace: "12%", ticks: { callback: v => num(v), font: fuenteEje, precision: 0 },
-           grid: { color: "#dde3ea" }, border: { display: false } },
-      x: { grid: { display: false }, ticks: { color: "#0a132d", font: fuenteEje, maxRotation: 0 } }
-    }
+    plugins: { legend: { display: false }, tooltip: { ...graf.tooltip, callbacks: { ...graf.tooltip.callbacks, label: ctx => ` ${num(ctx.raw)} pacientes` } },
+               datalabels: { ...graf.etiquetas, display: true } },
+    scales: { y: graf.ejeValores, x: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje, maxRotation: 0 } } }
   }
 });
+U.vigilarGraficos([graficoOcu, graficoSusp]);
 
-/* ---------- el gráfico siempre ocupa todo su espacio ----------
-   Al cargar los datos la página cambia de alto (aparece la barra de desplazamiento
-   y cargan las letras), y el gráfico quedaba dibujado con un tamaño antiguo hasta
-   que se abría "Ver detalle". Esto lo vuelve a medir en cada uno de esos momentos. */
-function ajustarGrafico() {
-  requestAnimationFrame(() => { grafico.resize(); graficoSusp.resize(); });
+/* ---------- sumas ---------- */
+const enPeriodo = (d, anio, mes) => d.anio == anio && (!mes || d.mes == mes);
+function sumaREM(anio, mes) {
+  const t = { electiva: { hab: 0, ocu: 0 }, urgencia: { hab: 0, ocu: 0 }, suspension: { prog: 0, susp: 0 }, hay: false };
+  for (const d of datos.filter(d => enPeriodo(d, anio, mes))) {
+    t.hay = true;
+    for (const k of ["electiva", "urgencia"]) { t[k].hab += d[k].hab; t[k].ocu += d[k].ocu; }
+    t.suspension.prog += d.suspension.prog; t.suspension.susp += d.suspension.susp;
+  }
+  return t;
 }
-document.querySelectorAll(".chart-box").forEach(c => new ResizeObserver(ajustarGrafico).observe(c));
-window.addEventListener("load", ajustarGrafico);
-if (document.fonts) document.fonts.ready.then(ajustarGrafico);
-document.querySelector("details").addEventListener("toggle", ajustarGrafico);
+const pctNum = (a, b) => b ? a / b * 100 : null;
 
 /* ---------- actualizar todo según los filtros ---------- */
 function actualizar() {
-  const anio = $("fAnio").value, mes = $("fMes").value;
-  const sel = datos.filter(d => d.anio == anio && (!mes || d.mes == mes));
-  const suma = tipo => sel.reduce((t, d) => ({ hab: t.hab + d[tipo].hab, ocu: t.ocu + d[tipo].ocu }), { hab: 0, ocu: 0 });
-  const e = suma("electiva"), u = suma("urgencia");
+  const anio = $("fAnio").value, mes = Number($("fMes").value) || 0;
+  const ant = mes ? U.mesAnterior(anio, mes) : null;
+  const vsAnt = ant ? ` vs ${MESES_CORTOS[ant.mes - 1].toLowerCase()}` : "";
+  const t = sumaREM(anio, mes), tA = ant ? sumaREM(ant.anio, ant.mes) : null;
 
-  $("eHab").textContent = hrs(e.hab); $("eOcu").textContent = hrs(e.ocu); $("ePct").textContent = pct(e.ocu, e.hab);
-  $("uHab").textContent = hrs(u.hab); $("uOcu").textContent = hrs(u.ocu); $("uPct").textContent = pct(u.ocu, u.hab);
+  /* ocupación */
+  for (const [k, p] of [["electiva", "e"], ["urgencia", "u"]]) {
+    const v = pctNum(t[k].ocu, t[k].hab);
+    U.animar(p + "Hab", t[k].hab, hrs);
+    U.animar(p + "Ocu", t[k].ocu, hrs);
+    U.animar(p + "Pct", v, x => dec(x, 1) + "%");
+    $(p + "Bar").style.width = Math.min(100, v || 0) + "%";
+    if (tA && tA.hay) U.variacion(p + "PctD", v, pctNum(tA[k].ocu, tA[k].hab), { sentido: k === "electiva" ? 1 : 0, tipo: "pt", texto: vsAnt });
+    else $(p + "PctD").innerHTML = "&nbsp;";
+  }
 
-  grafico.data.datasets[0].data = [e.hab, u.hab];
-  grafico.data.datasets[1].data = [e.ocu, u.ocu];
-  grafico.update();
-
-  /* suspensión de cirugías electivas: suspendidos ÷ programados */
-  const s = sel.reduce((t, d) => ({ prog: t.prog + d.suspension.prog, susp: t.susp + d.suspension.susp }), { prog: 0, susp: 0 });
-  $("sProg").textContent = num(s.prog);
-  $("sSusp").textContent = num(s.susp);
-  $("sPct").textContent  = pct(s.susp, s.prog);
+  /* suspensión */
+  const s = t.suspension;
+  U.animar("sProg", s.prog); U.animar("sSusp", s.susp);
+  U.animar("sPct", pctNum(s.susp, s.prog), x => dec(x, 1) + "%");
+  if (tA && tA.hay) U.variacion("sPctD", pctNum(s.susp, s.prog), pctNum(tA.suspension.susp, tA.suspension.prog), { sentido: -1, tipo: "pt", texto: vsAnt });
+  else $("sPctD").innerHTML = "&nbsp;";
   graficoSusp.data.datasets[0].data = [s.prog, s.susp];
   graficoSusp.update();
 
-  ajustarGrafico();
-
-  /* tabla: todos los meses del año elegido */
-  const meses = datos.filter(d => d.anio == anio).sort((a, b) => a.mes - b.mes);
+  /* evolución mensual del % de ocupación y tabla */
+  const meses = datos.filter(d => d.anio == anio);
+  graficoOcu.data.labels = meses.map(d => MESES_CORTOS[d.mes - 1]);
+  ["electiva", "urgencia"].forEach((k, i) => {
+    graficoOcu.data.datasets[i].data = meses.map(d => pctNum(d[k].ocu, d[k].hab));
+    graficoOcu.data.datasets[i].pointRadius = meses.map(d => mes && d.mes == mes ? 8 : 4);
+  });
+  graficoOcu.update();
   const fila = (d, nombre) => `<tr><td>${nombre}</td>
     <td class="ini">${hrs(d.electiva.hab)}</td><td>${hrs(d.electiva.ocu)}</td><td>${pct(d.electiva.ocu, d.electiva.hab)}</td>
-    <td class="ini">${hrs(d.urgencia.hab)}</td><td>${hrs(d.urgencia.ocu)}</td><td>${pct(d.urgencia.ocu, d.urgencia.hab)}</td></tr>`;
-  const tot = { electiva: { hab: 0, ocu: 0 }, urgencia: { hab: 0, ocu: 0 } };
-  meses.forEach(d => ["electiva", "urgencia"].forEach(t => { tot[t].hab += d[t].hab; tot[t].ocu += d[t].ocu; }));
+    <td class="ini">${hrs(d.urgencia.hab)}</td><td>${hrs(d.urgencia.ocu)}</td><td>${pct(d.urgencia.ocu, d.urgencia.hab)}</td>
+    <td class="ini">${num(d.suspension.prog)}</td><td>${num(d.suspension.susp)}</td><td>${pct(d.suspension.susp, d.suspension.prog)}</td></tr>`;
   $("tabla").innerHTML =
     `<thead>
-       <tr><th rowspan="2">Mes</th><th colspan="3" class="grupo-col">Electiva</th><th colspan="3" class="grupo-col">Urgencia</th></tr>
+       <tr><th rowspan="2">Mes</th><th colspan="3" class="grupo-col">Quirófano electivo</th><th colspan="3" class="grupo-col">Quirófano de urgencia</th><th colspan="3" class="grupo-col">Suspensión electiva</th></tr>
        <tr><th class="ini">Horas<br>habilitadas</th><th>Horas<br>ocupadas</th><th>%</th>
-           <th class="ini">Horas<br>habilitadas</th><th>Horas<br>ocupadas</th><th>%</th></tr>
+           <th class="ini">Horas<br>habilitadas</th><th>Horas<br>ocupadas</th><th>%</th>
+           <th class="ini">Progra&shy;mados</th><th>Suspen&shy;didos</th><th>%</th></tr>
      </thead>
      <tbody>${meses.map(d => fila(d, MESES[d.mes - 1])).join("")}</tbody>
-     <tfoot>${fila(tot, "<b>Total " + anio + "</b>")}</tfoot>`;
+     <tfoot>${fila(sumaREM(anio, 0), "Total " + anio)}</tfoot>`;
 
-  /* tabla de intervenciones: cantidad por tipo, procedencia y estado */
-  const selBase = (base || []).filter(d => d.anio == anio && (!mes || d.mes == mes));
-
-  /* tarjetones: total de cada tipo */
-  const totalTipo = tipo => selBase.filter(d => d.tipo === tipo).length;
-  $("tCmay").textContent = num(totalTipo("CMAY"));
-  $("tCmen").textContent = num(totalTipo("CMEN"));
-  $("tProc").textContent = num(totalTipo("PROC"));
-
-  let totalInterv = 0;
-  const filasInterv = COMBINACIONES.map((c, i) => {
-    const n = selBase.filter(d => d.tipo === c.tipo && d.proc === c.proc && d.estado === c.estado).length;
-    totalInterv += n;
-    const inicio = i > 0 && COMBINACIONES[i - 1].tipo !== c.tipo ? ' class="inicio-tipo"' : "";
-    return `<tr${inicio}><td>${c.tipo}</td><td>${c.proc}</td><td>${c.estado}</td><td>${num(n)}</td></tr>`;
-  }).join("");
-  $("tablaInterv").innerHTML =
-    `<thead><tr><th>Tipo</th><th>Procedencia</th><th>Estado</th><th>Cantidad</th></tr></thead>
-     <tbody>${filasInterv}</tbody>
-     <tfoot><tr><td colspan="3">Total</td><td>${num(totalInterv)}</td></tr></tfoot>`;
+  /* intervenciones (base) */
+  const sel = base.filter(d => enPeriodo(d, anio, mes));
+  const cuenta = (tipo, lista = sel) => lista.filter(d => d.tipo === tipo).length;
+  U.animar("tCmay", cuenta("CMAY")); U.animar("tCmen", cuenta("CMEN")); U.animar("tProc", cuenta("PROC"));
+  if (ant) U.variacion("tCmayD", cuenta("CMAY"), cuenta("CMAY", base.filter(d => enPeriodo(d, ant.anio, ant.mes))) || null, { texto: vsAnt });
+  else $("tCmayD").innerHTML = "&nbsp;";
+  let total = 0, filas = "";
+  TIPOS.forEach(([tipo, nombre], ti) => {
+    ["ELECTIVA", "URGENCIA"].forEach((proc, pi) => ["HOSPITALIZADO", "AMBULATORIO"].forEach((estado, ei) => {
+      const c = sel.filter(d => d.tipo === tipo && d.proc === proc && d.estado === estado).length;
+      total += c;
+      filas += `<tr${ti && !pi && !ei ? ' class="inicio-tipo"' : ""}><td>${nombre}</td><td>${proc[0] + proc.slice(1).toLowerCase()}</td><td>${estado[0] + estado.slice(1).toLowerCase()}</td><td>${num(c)}</td></tr>`;
+    }));
+  });
+  $("tablaInterv").innerHTML = `<thead><tr><th>Tipo</th><th>Procedencia</th><th>Estado</th><th>Cantidad</th></tr></thead>
+    <tbody>${filas}</tbody><tfoot><tr><td colspan="3">Total</td><td>${num(total)}</td></tr></tfoot>`;
 }
 
+/* ---------- carga ---------- */
+async function cargar() {
+  if (U.avisoArchivoLocal()) return;
+  U.aviso("Buscando los archivos REM…", { progreso: true });
+  const promesaBase = cargarBase().catch(e => { console.warn(e); return null; });
+  const rem = await U.cargarREM("SA", HOJA, leerA21);
+  datos = rem.datos;
+  base = (await promesaBase) || [];
+
+  const errores = [];
+  if (!rem.ruta) errores.push("No se encontraron los archivos SA_01 … SA_12 en la carpeta REM/&lt;año&gt;/REM_SA.");
+  else if (!datos.length) errores.push(`Se encontraron REM, pero ninguno trae la hoja <b>${HOJA}</b> con las secciones A o E.`);
+  if (!base.length) errores.push("No se encontró la base <b>bdpabellon/l.pabellon.xlsx</b> (o le faltan las columnas FECING, TIPO COD 1, PROCED o PLANILLA EGRESO HOSP).");
+  if (errores.length) U.aviso(errores.join("<br><br>"), { error: true }); else U.ocultarAviso();
+  if (!datos.length && !base.length) { U.listo("Sin datos"); return; }
+
+  const periodos = [...datos, ...base].map(d => ({ anio: d.anio, mes: d.mes }));
+  U.filtrosPeriodo(datos.length ? datos : periodos, actualizar);
+  actualizar();
+  const u = U.ultimoPeriodo(datos.length ? datos : periodos);
+  U.listo(U.textoActualizado(u.anio, u.mes));
+}
 cargar();
 </script>
 </body>

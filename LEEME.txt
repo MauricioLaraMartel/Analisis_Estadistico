@@ -1,0 +1,87 @@
+SITIO UNIDAD DE ESTADÍSTICA · HOSPITAL SAN LUIS DE BUIN-PAINE
+Versión noviembre 2026
+================================================================
+
+1. CÓMO INSTALARLO
+------------------
+Copia TODOS estos archivos en la carpeta PAGINA ESTADÍSTICA, reemplazando
+los anteriores:
+
+   estilos.css               estilos de TODO el sitio
+   comun.js                  menú, pie, fecha y hora, lectura de REM, animaciones
+   favicon.svg               ícono de la pestaña del navegador
+   LEEME.txt                 este archivo
+   index.html                Inicio
+   manuales.html             Manuales
+   urgencia.html             Producción › Urgencia
+   pabellon.html             Producción › Pabellón
+   atencion-cerrada.html     Producción › Atención cerrada
+   produccion-medica.html    Producción › Ambulatorio médica
+   produccion-no-medica.html Producción › Ambulatorio no médica (pronto)
+   produccion-dental.html    Producción › Odontología
+   laboratorio.html          Producción › Laboratorio   (nombre en minúscula)
+   imagenologia.html         Producción › Imagenología  (sin la "e" de más)
+
+Si en tu carpeta quedan los antiguos "Laboratorio.html" o "imageneologia.html",
+bórralos: el menú ya no los usa.
+
+Carpetas de datos (no cambian):
+   REM/2026/REM_SA/SA_01.xlsm …          REM serie A
+   REM/2026/REM_BS/SBS_01_26.xlsm …      REM serie BS
+   bdurgencia/l.urgencia.xlsx
+   bdpabellon/l.pabellon.xlsx
+   atencion_cerrada/indicadores_ac_2026.xlsx
+   manuales/*.pdf
+
+Las páginas deben abrirse desde el servidor (http://… o Live Server),
+no con doble clic. Después de reemplazar archivos, recarga con Ctrl + F5.
+
+
+2. QUÉ HACE CADA ARCHIVO COMÚN
+------------------------------
+comun.js escribe en TODAS las páginas, sin tocar los .html:
+- La franja con la FECHA Y HORA ACTUAL (bajo la barra azul y roja).
+  Se actualiza sola cada minuto. En computador se ve
+  "Viernes, 27 de noviembre de 2026 · 10:25 hrs"; en celular, "27-11-2026 · 10:25 hrs".
+  Usa la hora del computador de quien mira la página.
+- El encabezado con el menú "Producción" desplegable y el menú de celular.
+- El pie de página (dirección, correo, teléfono).
+- La búsqueda de los REM, los filtros Año/Mes, los botones
+  "Descargar Excel" e "Imprimir", las animaciones y los íconos.
+
+estilos.css tiene los colores y el diseño de todo el sitio.
+Cada .html solo trae su contenido y su propio cálculo de datos.
+Cada .html debe tener en <body> el atributo data-pagina (por ejemplo
+<body data-pagina="urgencia">) para que el menú marque la página activa.
+
+
+3. AÑO NUEVO (2027)
+-------------------
+No hay que programar nada. Solo carga los archivos:
+- REM:  crea REM/2027/REM_SA/ y REM/2027/REM_BS/ y deja ahí SA_01.xlsm,
+        SBS_01_27.xlsm, etc. Las páginas buscan solas el año actual y los
+        anteriores, y el filtro "Año" muestra los años que encuentra.
+- Atención cerrada: agrega atencion_cerrada/indicadores_ac_2027.xlsx.
+- Urgencia y pabellón: sigue actualizando l.urgencia.xlsx y l.pabellon.xlsx.
+Desde qué año se busca: comun.js → SITIO.anioDesde.
+
+
+4. TAREAS FRECUENTES
+--------------------
+- Agregar una página al menú Producción:
+    comun.js → lista MENU_PRODUCCION (una línea por página). En la página
+    nueva, pon <body data-pagina="clave"> con la misma clave.
+- Cambiar correo, teléfono o dirección del pie: comun.js → construirPie.
+- Abrir por defecto el acumulado en vez del último mes:
+    en la página, cambia  U.filtrosPeriodo(datos, actualizar)
+    por                   U.filtrosPeriodo(datos, actualizar, { mesPorDefecto: "acumulado" })
+- Sección "Indicadores de gestión" del inicio: está OCULTA.
+    Para mostrarla: index.html → <section id="indicadores" hidden>,
+    borra la palabra hidden.
+- Quitar la fecha y hora: estilos.css → agrega  .barra-fecha { display: none; }
+- Agregar un manual:
+    manuales.html → copia un bloque <article class="tarjeta manual"> y cambia
+    título, tema y ruta del PDF.
+- Si mueves la carpeta de los REM y una página no los encuentra:
+    borra los datos del sitio en el navegador (o prueba en ventana de
+    incógnito) para que vuelva a buscar la carpeta.
