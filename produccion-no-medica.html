@@ -8,14 +8,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body data-pagina="nomedica">
+<body data-pagina="nomedica" class="cargando">
 
   <section class="cabecera-pagina">
     <div class="contenedor cabecera-fila">
       <span class="cabecera-icono" data-icono="nomedica"></span>
       <div class="cabecera-texto">
-        <h1>Ambulatorio no Médica</h1>
+        <h1>Atenciones de profesionales no médicos</h1>
       </div>
     </div>
     <div class="acento"></div>
@@ -23,18 +26,409 @@
 
   <main class="contenido">
     <div class="contenedor">
-      <section class="tarjeta en-preparacion">
-        <span class="modulo-icono" data-icono="nomedica" data-tam="30"></span>
-        <h2>Esta sección está en preparación</h2>
-        <p>Pronto podrás ver aquí las atenciones de profesionales no médicos. Mientras tanto, revisa las otras áreas de producción.</p>
+
+      <div id="aviso" class="aviso">Cargando REM A06, A07 y A28…</div>
+
+      <!-- FILTROS -->
+      <section class="tarjeta filtros">
+        <div class="filtros-campos">
+          <label for="fAnio">Año<select id="fAnio"></select></label>
+          <label for="fMes">Mes<select id="fMes"></select></label>
+        </div>
         <div class="acciones">
-          <a href="index.html#Produccion" class="boton-accion">Volver a Producción</a>
-          <a href="produccion-medica.html" class="boton-accion">Ambulatorio Médica</a>
+          <button type="button" class="boton-accion" data-exportar><span data-icono="descargar" data-tam="18"></span>Descargar Excel</button>
+          <button type="button" class="boton-accion" data-imprimir><span data-icono="imprimir" data-tam="18"></span>Imprimir</button>
         </div>
       </section>
+
+      <!-- KPIs -->
+      <section class="kpis" aria-live="polite">
+        <div class="kpi destacado"><span>Total atenciones no médicas</span><b id="kTotal">–</b><div class="kpi-pie"><small id="kTotalD">&nbsp;</small><svg class="spark" id="sTotal"></svg></div></div>
+        <div class="kpi marino"><span>Salud mental</span><b id="kSM">–</b><small id="kSMD">&nbsp;</small></div>
+        <div class="kpi"><span>Especialidad (CAE)</span><b id="kCAE">–</b><small id="kCAED">&nbsp;</small></div>
+        <div class="kpi rojo"><span>Rehabilitación</span><b id="kRH">–</b><small id="kRHD">&nbsp;</small></div>
+      </section>
+
+      <!-- ATENCIONES POR PROFESIONAL -->
+      <article class="tarjeta">
+        <h2>Atenciones por profesional</h2>
+        <p class="sub" id="subProf">&nbsp;</p>
+        <div class="chart-box" id="cajaProf"><canvas id="gProf"></canvas></div>
+        <details>
+          <summary>Ver detalle por mes</summary>
+          <div class="scroll"><table id="tabla"></table></div>
+        </details>
+      </article>
+
+      <!-- SALUD MENTAL Y CAE -->
+      <div class="dos-columnas">
+        <article class="tarjeta">
+          <h2>Salud mental</h2>
+          <div class="kpis">
+            <div class="kpi marino"><span>Consultas</span><b id="kSMctrl">–</b></div>
+            <div class="kpi gris"><span>Intervención psicosocial grupal</span><b id="kSMgrupal">–</b></div>
+            <div class="kpi"><span>Psicoterapia individual</span><b id="kSMpsicot">–</b></div>
+            <div class="kpi destacado"><span>Total</span><b id="kSMtot">–</b></div>
+          </div>
+          <div class="scroll"><table id="tSM" class="tabla-esp"></table></div>
+        </article>
+        <article class="tarjeta">
+          <h2>Consultas y controles CAE</h2>
+          <div class="kpis">
+            <div class="kpi marino"><span>Consultas</span><b id="kCAEcons">–</b></div>
+            <div class="kpi"><span>Controles</span><b id="kCAEctrl">–</b></div>
+          </div>
+          <div class="scroll"><table id="tCAE" class="tabla-esp"></table></div>
+        </article>
+      </div>
+
+      <!-- REHABILITACIÓN -->
+      <article class="tarjeta">
+        <h2>Rehabilitación en nivel hospitalario</h2>
+        <div class="kpis">
+          <div class="kpi marino"><span>Evaluación inicial</span><b id="kRHini">–</b></div>
+          <div class="kpi"><span>Evaluación intermedia</span><b id="kRHint">–</b></div>
+          <div class="kpi rojo"><span>Sesiones de rehabilitación</span><b id="kRHses">–</b></div>
+          <div class="kpi destacado"><span>% en atención cerrada</span><b id="kRHpctC">–</b><small id="kRHpctCD">&nbsp;</small></div>
+        </div>
+        <div class="chart-box" id="cajaRH"><canvas id="gRH"></canvas></div>
+        <details>
+          <summary>Ver detalle por profesional</summary>
+          <div class="scroll"><table id="tRH" class="tabla-esp"></table></div>
+        </details>
+      </article>
+
     </div>
   </main>
 
 <script src="comun.js"></script>
+<script>
+/* =====================================================================
+   DATOS: REM SA → REM/<año>/REM_SA/SA_01.xlsm … SA_12.xlsm
+   comun.js (U.cargarREM) prueba los 12 meses de cada año: SA_11 y SA_12
+   se leen solos en cuanto se copien a la carpeta.
+     · A06 Sección A.1      Controles de atención primaria / especialidades (salud mental)
+     · A07 Sección C        Consultas y controles por otros profesionales en especialidad
+     · A28 Secciones B.2–B.4 Rehabilitación en nivel hospitalario
+
+   FÓRMULAS (columna TOTAL / "Ambos sexos" de cada fila del REM)
+     Salud mental (siempre la columna "Ambos sexos")
+         Consultas  = Σ "Controles Salud Mental" de psicólogo, enfermera, matrona, trabajador social,
+                      otros prof. capacitados, terapeuta ocupacional y técnico en enfermería SM
+         Intervención psicosocial grupal = fila Intervención Psicosocial Grupal
+         Psicoterapia individual         = fila Psicoterapia Individual · Psicólogo/a
+         Total salud mental = Consultas + Intervención psicosocial grupal + Psicoterapia individual
+     Especialidad   = Σ total de enfermera, matrona (solo "Ginecología y otros"), nutricionista,
+                      psicólogo (excluye SM), fonoaudiólogo, tecnólogo médico, trabajador social,
+                      terapeuta ocupacional
+         Controles  = columna "Total controles (incluidos en grupo de edad)"
+         Consultas  = Total − Controles
+     Rehabilitación = Σ (B.2 evaluación inicial + B.3 evaluación intermedia + B.4 sesiones)
+                      de kinesiólogo, terapeuta ocupacional y fonoaudiólogo
+         Abierta    = presencial + a distancia + domiciliaria
+         Cerrada    = UPC + cuidados medios y básicos
+         % cerrada  = Cerrada ÷ Rehabilitación × 100
+     Total no médica = Salud mental + Especialidad + Rehabilitación
+     Acumulado del año = suma de los meses SA_01 … SA_12 disponibles
+   Para agregar o quitar filas basta con editar las listas SM, CAE y RH.
+   ===================================================================== */
+const HOJAS = ["A06", "A07", "A28"];
+
+/* Nombres de los profesionales */
+const PROF = {
+  psicologo: "Psicólogo/a", enfermera: "Enfermera/o", matrona: "Matrona/ón", ts: "Trabajador/a social",
+  to: "Terapeuta ocupacional", fono: "Fonoaudiólogo/a", kine: "Kinesiólogo/a", nutri: "Nutricionista",
+  tecnologo: "Tecnólogo/a médico/a", tens: "Técnico en enfermería SM", otros: "Otros prof. capacitados SM",
+  grupal: "Intervención psicosocial grupal"
+};
+
+/* A06 · Sección A.1: actividad (columna A) y profesional (columna B) */
+const SM = [
+  { clave: "c_psicologo", act: "CONTROLES SALUD MENTAL", rem: "PSICOLOGO",             prof: "psicologo", grupo: "ctrl" },
+  { clave: "c_enfermera", act: "CONTROLES SALUD MENTAL", rem: "ENFERMER",              prof: "enfermera", grupo: "ctrl" },
+  { clave: "c_matrona",   act: "CONTROLES SALUD MENTAL", rem: "MATRON",                prof: "matrona",   grupo: "ctrl" },
+  { clave: "c_ts",        act: "CONTROLES SALUD MENTAL", rem: "TRABAJADOR",            prof: "ts",        grupo: "ctrl" },
+  { clave: "c_otros",     act: "CONTROLES SALUD MENTAL", rem: "OTROS PROFESIONALES",   prof: "otros",     grupo: "ctrl" },
+  { clave: "c_to",        act: "CONTROLES SALUD MENTAL", rem: "TERAPEUTA OCUPACIONAL", prof: "to",        grupo: "ctrl" },
+  { clave: "c_tens",      act: "CONTROLES SALUD MENTAL", rem: "TECNICO EN ENFERMERIA", prof: "tens",      grupo: "ctrl" },
+  { clave: "grupal",      act: "INTERVENCION PSICOSOCIAL GRUPAL", rem: "",            prof: "grupal",    grupo: "grupal", nombre: "Intervención psicosocial grupal" },
+  { clave: "psicot",      act: "PSICOTERAPIA INDIVIDUAL", rem: "PSICOLOGO",            prof: "psicologo", grupo: "psicot", nombre: "Psicoterapia individual (psicólogo/a)" }
+];
+
+/* A07 · Sección C: profesional (columna A) y, para matrona, el tipo (columna B) */
+const CAE = [
+  { clave: "enfermera", rem: "ENFERMER",              prof: "enfermera", nombre: "Enfermera/o" },
+  { clave: "matrona",   rem: "MATRON", sub: "GINECOLOGIA", prof: "matrona", nombre: "Matrona/ón (ginecología y otros)" },
+  { clave: "nutri",     rem: "NUTRICIONISTA",         prof: "nutri",     nombre: "Nutricionista" },
+  { clave: "psicologo", rem: "PSICOLOGO",             prof: "psicologo", nombre: "Psicólogo/a (excluye SM)" },
+  { clave: "fono",      rem: "FONOAUDIOLOG",          prof: "fono",      nombre: "Fonoaudiólogo/a" },
+  { clave: "tecnologo", rem: "TECNOLOGO",             prof: "tecnologo", nombre: "Tecnólogo/a médico/a" },
+  { clave: "ts",        rem: "TRABAJADOR",            prof: "ts",        nombre: "Trabajador/a social" },
+  { clave: "to",        rem: "TERAPEUTA OCUPACIONAL", prof: "to",        nombre: "Terapeuta ocupacional" }
+];
+
+/* A28 · Secciones B.2, B.3 y B.4 */
+const ETAPAS = [
+  { clave: "ini", seccion: "B.2", nombre: "Evaluación inicial" },
+  { clave: "int", seccion: "B.3", nombre: "Evaluación intermedia" },
+  { clave: "ses", seccion: "B.4", nombre: "Sesiones de rehabilitación" }
+];
+const RH = [
+  { clave: "kine", rem: "KINESIOLOG",            prof: "kine" },
+  { clave: "to",   rem: "TERAPEUTA OCUPACIONAL", prof: "to" },
+  { clave: "fono", rem: "FONO",                  prof: "fono" }   // en el REM dice "Fonoadiólogo/a"
+];
+
+const { $, norm, n, num, dec, pct, MESES, MESES_CORTOS, COLOR, graf } = U;
+let datos = [];
+
+/* ---------- utilidades de lectura ---------- */
+const filasDe = (wb, hoja) => wb.Sheets[hoja] ? XLSX.utils.sheet_to_json(wb.Sheets[hoja], { header: 1, defval: "", raw: true }) : null;
+/* Bloque de una sección: desde su título hasta el título de la sección siguiente */
+function seccion(filas, codigo) {
+  const re = new RegExp("^SECCION " + codigo.replace(".", "\\.") + "\\s*:");
+  const ini = filas.findIndex(f => re.test(norm(f[0])));
+  if (ini < 0) return null;
+  let fin = filas.findIndex((f, i) => i > ini && /^SECCION /.test(norm(f[0])));
+  if (fin < 0) fin = Math.min(filas.length, ini + 60);
+  return filas.slice(ini, fin);
+}
+/* Columna cuyo encabezado cumple la prueba, buscada en las primeras filas del bloque */
+function columna(bloque, prueba, porDefecto) {
+  for (let i = 1; i <= 5 && i < bloque.length; i++) { const c = (bloque[i] || []).findIndex(v => prueba(norm(v))); if (c >= 0) return c; }
+  return porDefecto;
+}
+
+/* ---------- A06 · Sección A.1 ---------- */
+function leerA06(wb) {
+  const filas = filasDe(wb, "A06"); if (!filas) return null;
+  const b = seccion(filas, "A.1"); if (!b) return null;
+  const cT = columna(b, v => v === "AMBOS SEXOS", 2), cH = columna(b, v => v === "HOMBRES", 3), cM = columna(b, v => v === "MUJERES", 4);
+  const res = vacioSM();
+  let act = "";
+  for (const f of b.slice(1)) {
+    if (norm(f[0])) act = norm(f[0]);
+    const prof = norm(f[1]);
+    const item = SM.find(x => act.startsWith(x.act) && (x.rem ? prof.startsWith(x.rem) : !prof));
+    if (item) res[item.clave] = { t: n(f[cT]), h: n(f[cH]), m: n(f[cM]) };
+  }
+  return res;
+}
+
+/* ---------- A07 · Sección C ---------- */
+function leerA07(wb) {
+  const filas = filasDe(wb, "A07"); if (!filas) return null;
+  const b = seccion(filas, "C"); if (!b) return null;
+  const cT = columna(b, v => v === "AMBOS SEXOS", 2), cC = columna(b, v => v.startsWith("TOTAL CONTROLES"), 42);
+  const res = vacioCAE();
+  let prof = "";
+  for (const f of b.slice(1)) {
+    if (norm(f[0])) prof = norm(f[0]);
+    const sub = norm(f[1]);
+    const item = CAE.find(x => prof.startsWith(x.rem) && (x.sub ? sub.startsWith(x.sub) : !sub));
+    if (item) res[item.clave] = { t: n(f[cT]), c: n(f[cC]) };
+  }
+  return res;
+}
+
+/* ---------- A28 · Secciones B.2, B.3 y B.4 ---------- */
+function leerA28(wb) {
+  const filas = filasDe(wb, "A28"); if (!filas) return null;
+  const res = vacioRH();
+  let alguna = false;
+  for (const e of ETAPAS) {
+    const b = seccion(filas, e.seccion); if (!b) continue;
+    alguna = true;
+    const cT = columna(b, v => v === "TOTAL", 1);
+    const cols = pruebas => pruebas.map(p => columna(b, p, -1)).filter(c => c >= 0);
+    const cA = cols([v => v === "PRESENCIAL", v => v === "A DISTANCIA", v => v === "DOMICILIARIA"]);
+    const cC = cols([v => v === "UPC", v => v.startsWith("CUIDADOS MEDIOS")]);
+    const suma = (f, cs) => cs.reduce((s, c) => s + n(f[c]), 0);
+    for (const f of b.slice(1)) {
+      const item = RH.find(x => norm(f[0]).startsWith(x.rem));
+      if (item) res[e.clave][item.clave] = { t: n(f[cT]), a: suma(f, cA), c: suma(f, cC) };
+    }
+  }
+  return alguna ? res : null;
+}
+
+const vacioSM = () => Object.fromEntries(SM.map(x => [x.clave, { t: 0, h: 0, m: 0 }]));
+const vacioCAE = () => Object.fromEntries(CAE.map(x => [x.clave, { t: 0, c: 0 }]));
+const vacioRH = () => Object.fromEntries(ETAPAS.map(e => [e.clave, Object.fromEntries(RH.map(x => [x.clave, { t: 0, a: 0, c: 0 }]))]));
+
+function leerMes(wb) {
+  const sm = leerA06(wb), cae = leerA07(wb), rh = leerA28(wb);
+  if (!sm && !cae && !rh) return null;
+  return { sm: sm || vacioSM(), cae: cae || vacioCAE(), rh: rh || vacioRH() };
+}
+
+/* ---------- sumas ---------- */
+const sumarA = (a, b) => { for (const k in a) a[k] += b[k] || 0; return a; };
+function sumar(lista) {
+  const t = { sm: vacioSM(), cae: vacioCAE(), rh: vacioRH() };
+  for (const d of lista) {
+    SM.forEach(x => sumarA(t.sm[x.clave], d.sm[x.clave]));
+    CAE.forEach(x => sumarA(t.cae[x.clave], d.cae[x.clave]));
+    ETAPAS.forEach(e => RH.forEach(x => sumarA(t.rh[e.clave][x.clave], d.rh[e.clave][x.clave])));
+  }
+  return t;
+}
+const smGrupo = (t, g) => SM.filter(x => !g || x.grupo === g).reduce((s, x) => s + t.sm[x.clave].t, 0);
+const caeSuma = t => CAE.reduce((s, x) => sumarA(s, t.cae[x.clave]), { t: 0, c: 0 });
+const rhEtapa = (t, e) => RH.reduce((s, x) => sumarA(s, t.rh[e][x.clave]), { t: 0, a: 0, c: 0 });
+const rhSuma = t => ETAPAS.reduce((s, e) => sumarA(s, rhEtapa(t, e.clave)), { t: 0, a: 0, c: 0 });
+const pctNum = (a, b) => b ? a / b * 100 : null;
+/* Indicadores principales de un período */
+const indicadores = t => {
+  const sm = smGrupo(t), cae = caeSuma(t), rh = rhSuma(t);
+  return { sm, cae: cae.t, caeCtrl: cae.c, rh: rh.t, rhCerr: rh.c, total: sm + cae.t + rh.t };
+};
+/* Filas del primer gráfico: agrupadas por área (salud mental, CAE, rehabilitación)
+   y, dentro de cada área, de mayor a menor. Se omiten las filas en cero. */
+function filasPorArea(t) {
+  const sm  = SM.map(x => ({ area: 0, nombre: x.nombre || PROF[x.prof], v: t.sm[x.clave].t }));
+  const cae = CAE.map(x => ({ area: 1, nombre: x.nombre, v: t.cae[x.clave].t }));
+  const rh  = RH.map(x => ({ area: 2, nombre: PROF[x.prof], v: ETAPAS.reduce((s, e) => s + t.rh[e.clave][x.clave].t, 0) }));
+  return [sm, cae, rh].flatMap(g => g.filter(x => x.v > 0).sort((a, b) => b.v - a.v));
+}
+
+/* ---------- gráficos horizontales (igual que Ambulatorio Médica) ---------- */
+function barrasEsp(id, series) {
+  return new Chart($(id), {
+    type: "bar",
+    data: { labels: [], datasets: series.map(([label, color]) => ({ label, data: [], backgroundColor: color, borderRadius: 6, maxBarThickness: 34, categoryPercentage: 0.82, barPercentage: 0.92 })) },
+    options: {
+      indexAxis: "y", layout: { padding: { right: 10, top: 4 } },
+      plugins: { legend: graf.leyenda, tooltip: graf.tooltip, datalabels: graf.etiquetas },
+      scales: { x: graf.ejeValores, y: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje, autoSkip: false } } }
+    }
+  });
+}
+/* Primer gráfico: una barra por fila, con el color de su área (grouped: false = una sola barra por fila) */
+const gProf = new Chart($("gProf"), {
+  type: "bar",
+  data: { labels: [], datasets: [["Salud mental", COLOR.marino], ["Especialidad (CAE)", COLOR.azul], ["Rehabilitación", COLOR.rojo]]
+    .map(([label, color]) => ({ label, data: [], backgroundColor: color, borderRadius: 6, maxBarThickness: 26, grouped: false, categoryPercentage: 0.86, barPercentage: 0.92 })) },
+  options: {
+    indexAxis: "y", layout: { padding: { right: 10, top: 4 } },
+    plugins: { legend: graf.leyenda, tooltip: graf.tooltip, datalabels: graf.etiquetas },
+    scales: { x: graf.ejeValores, y: { grid: { display: false }, ticks: { color: COLOR.marino, font: graf.fuenteEje, autoSkip: false } } }
+  }
+});
+const gRH = barrasEsp("gRH", ETAPAS.map((e, i) => [e.nombre, [COLOR.marino, COLOR.azul, COLOR.rojo][i]]));
+U.vigilarGraficos([gProf, gRH]);
+let esperaResize;
+window.addEventListener("resize", () => { clearTimeout(esperaResize); esperaResize = setTimeout(() => { if (datos.length) actualizar(); }, 200); });
+
+const suma = v => v.reduce((a, b) => a + b, 0);
+/* Solo las filas con datos, de mayor a menor; el alto crece con la cantidad */
+function dibujar(grafico, idCaja, lista, valores) {
+  const filas = lista.map(e => ({ e, v: valores(e) })).filter(x => x.v.some(v => v > 0)).sort((a, b) => suma(b.v) - suma(a.v));
+  const caja = $(idCaja), barras = grafico.data.datasets.length;
+  const porFila = (caja.clientWidth < 600 ? 26 : 21) * barras + 14;
+  caja.style.height = Math.round(Math.min(Math.max(260, filas.length * porFila + 90), Math.max(320, window.innerHeight - 120))) + "px";
+  grafico.data.labels = filas.map(x => U.partir(x.e.nombre, 22));
+  grafico.data.datasets.forEach((d, i) => d.data = filas.map(x => x.v[i]));
+  grafico.update();
+}
+
+/* Dibuja el primer gráfico agrupado por área */
+function dibujarPorArea(t) {
+  const filas = filasPorArea(t), caja = $("cajaProf");
+  caja.style.height = Math.max(260, filas.length * (caja.clientWidth < 600 ? 34 : 28) + 110) + "px";
+  gProf.data.labels = filas.map(x => U.partir(x.nombre, 22));
+  gProf.data.datasets.forEach((d, i) => d.data = filas.map(x => x.area === i ? x.v : null));
+  gProf.update();
+}
+
+/* ---------- actualizar todo según los filtros ---------- */
+function actualizar() {
+  const anio = $("fAnio").value, mes = Number($("fMes").value) || 0;
+  const delAnio = datos.filter(d => d.anio == anio);
+  const t = sumar(delAnio.filter(d => !mes || d.mes == mes)), k = indicadores(t);
+  const ant = mes ? U.mesAnterior(anio, mes) : null;
+  const dAnt = ant ? datos.find(d => d.anio == ant.anio && d.mes == ant.mes) : null;
+  const kA = dAnt ? indicadores(sumar([dAnt])) : null;
+  const vsAnt = ant ? ` vs ${MESES_CORTOS[ant.mes - 1].toLowerCase()}` : "";
+
+  /* KPIs */
+  U.animar("kTotal", k.total);
+  U.animar("kSM", k.sm); U.animar("kCAE", k.cae); U.animar("kRH", k.rh);
+  if (kA) {
+    U.variacion("kTotalD", k.total, kA.total, { texto: vsAnt });
+    U.variacion("kSMD", k.sm, kA.sm, { texto: vsAnt });
+    U.variacion("kCAED", k.cae, kA.cae, { texto: vsAnt });
+    U.variacion("kRHD", k.rh, kA.rh, { texto: vsAnt });
+  } else {
+    $("kTotalD").textContent = U.etiquetaPeriodo();
+    $("kSMD").textContent = pct(k.sm, k.total) + " del total";
+    $("kCAED").textContent = pct(k.cae, k.total) + " del total";
+    $("kRHD").textContent = pct(k.rh, k.total) + " del total";
+  }
+  U.sparkline("sTotal", delAnio.map(d => indicadores(d).total), "#ffffff");
+
+  /* por profesional: agrupado por área y de mayor a menor dentro de cada área */
+  $("subProf").textContent = `${U.etiquetaPeriodo()} · por área y de mayor a menor dentro de cada una`;
+  dibujarPorArea(t);
+
+  /* salud mental */
+  /* Consultas = controles de salud mental de los 7 profesionales · total = ambos sexos */
+  U.animar("kSMctrl", smGrupo(t, "ctrl")); U.animar("kSMgrupal", smGrupo(t, "grupal"));
+  U.animar("kSMpsicot", smGrupo(t, "psicot")); U.animar("kSMtot", smGrupo(t));
+  const filaSM = (nombre, v, clase = "") => `<tr class="${clase}"><td>${nombre}</td><td class="col-total">${num(v)}</td></tr>`;
+  const grupoSM = (titulo, g) => { const items = SM.filter(x => x.grupo === g);
+    return filaSM(titulo, smGrupo(t, g)) + (items.length > 1 ? items.map(x => filaSM(PROF[x.prof], t.sm[x.clave].t, "sub")).join("") : ""); };
+  $("tSM").innerHTML = `<thead><tr><th>Actividad / profesional</th><th>Total</th></tr></thead>
+    <tbody>${grupoSM("Consultas", "ctrl")}${grupoSM("Intervención psicosocial grupal", "grupal")}
+      ${grupoSM("Psicoterapia individual (psicólogo/a)", "psicot")}</tbody>
+    <tfoot>${filaSM("Total", smGrupo(t))}</tfoot>`;
+
+  /* CAE */
+  U.animar("kCAEcons", k.cae - k.caeCtrl); U.animar("kCAEctrl", k.caeCtrl);
+  const filaCAE = (nombre, v) => `<tr><td>${nombre}</td><td>${num(v.t - v.c)}</td><td>${num(v.c)}</td><td class="col-total">${num(v.t)}</td></tr>`;
+  $("tCAE").innerHTML = `<thead><tr><th>Profesional</th><th>Consultas</th><th>Controles</th><th>Total</th></tr></thead>
+    <tbody>${CAE.map(x => filaCAE(x.nombre, t.cae[x.clave])).join("")}</tbody><tfoot>${filaCAE("Total", caeSuma(t))}</tfoot>`;
+
+  /* rehabilitación */
+  ETAPAS.forEach(e => U.animar("kRH" + e.clave, rhEtapa(t, e.clave).t));
+  U.animar("kRHpctC", pctNum(k.rhCerr, k.rh), v => dec(v, 1) + "%");
+  $("kRHpctCD").textContent = `${num(k.rhCerr)} cerrada · ${num(k.rh - k.rhCerr)} abierta`;
+  dibujar(gRH, "cajaRH", RH.map(x => ({ ...x, nombre: PROF[x.prof] })), x => ETAPAS.map(e => t.rh[e.clave][x.clave].t));
+  const filaRH = (nombre, v) => { const tot = sumarA(sumarA(sumarA({ t: 0, a: 0, c: 0 }, v[0]), v[1]), v[2]);
+    return `<tr><td>${nombre}</td>${v.map(x => `<td>${num(x.t)}</td>`).join("")}<td>${num(tot.a)}</td><td>${num(tot.c)}</td><td class="col-total">${num(tot.t)}</td></tr>`; };
+  $("tRH").innerHTML = `<thead><tr><th>Profesional</th>${ETAPAS.map(e => `<th>${e.nombre}</th>`).join("")}<th>Atención<br>abierta</th><th>Atención<br>cerrada</th><th>Total</th></tr></thead>
+    <tbody>${RH.map(x => filaRH(PROF[x.prof], ETAPAS.map(e => t.rh[e.clave][x.clave]))).join("")}</tbody>
+    <tfoot>${filaRH("Total", ETAPAS.map(e => rhEtapa(t, e.clave)))}</tfoot>`;
+
+  /* tabla por mes */
+  const fila = (d, nombre) => { const x = indicadores(d);
+    return `<tr><td>${nombre}</td><td>${num(smGrupo(d, "ctrl"))}</td><td>${num(smGrupo(d, "grupal"))}</td><td>${num(smGrupo(d, "psicot"))}</td><td>${num(x.sm)}</td>
+      <td>${num(x.cae - x.caeCtrl)}</td><td>${num(x.caeCtrl)}</td><td>${num(x.cae)}</td>
+      <td>${num(rhEtapa(d, "ini").t + rhEtapa(d, "int").t)}</td><td>${num(rhEtapa(d, "ses").t)}</td><td>${num(x.rh)}</td>
+      <td class="col-total">${num(x.total)}</td></tr>`; };
+  $("tabla").innerHTML = `<thead>
+      <tr><th rowspan="2">Mes</th><th colspan="4" class="grupo-col">Salud mental</th><th colspan="3" class="grupo-col">CAE</th><th colspan="3" class="grupo-col">Rehabilitación</th><th rowspan="2">Total</th></tr>
+      <tr><th class="ini">Consultas</th><th>Interv.<br>grupal</th><th>Psico&shy;terapia</th><th>Total</th><th class="ini">Consultas</th><th>Controles</th><th>Total</th><th class="ini">Evalua&shy;ciones</th><th>Sesiones</th><th>Total</th></tr>
+    </thead>
+    <tbody>${delAnio.map(d => fila(d, MESES[d.mes - 1])).join("")}</tbody>
+    <tfoot>${fila(sumar(delAnio), "Total " + anio)}</tfoot>`;
+}
+
+/* ---------- carga ---------- */
+async function cargar() {
+  if (U.avisoArchivoLocal()) return;
+  U.aviso("Buscando los archivos REM…", { progreso: true });
+  const rem = await U.cargarREM("SA", HOJAS, leerMes);
+  datos = rem.datos;
+  if (!rem.ruta) { U.aviso("No se encontraron los archivos SA_01 … SA_12 en la carpeta REM/&lt;año&gt;/REM_SA.", { error: true }); U.listo("Sin datos"); return; }
+  if (!datos.length) { U.aviso("Se encontraron REM, pero ninguno trae las hojas <b>A06</b>, <b>A07</b> o <b>A28</b> con las secciones esperadas.", { error: true }); U.listo("Sin datos"); return; }
+  U.ocultarAviso();
+  U.filtrosPeriodo(datos, actualizar);
+  actualizar();
+  const u = U.ultimoPeriodo(datos);
+  U.listo(U.textoActualizado(u.anio, u.mes));
+}
+cargar();
+</script>
 </body>
 </html>
